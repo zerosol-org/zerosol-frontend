@@ -4,48 +4,42 @@ const cars = [
     brand: "TESLA",
     name: "2024 Model 3",
     spec: "Long Range Dual Motor",
-    image:
-      "https://images.unsplash.com/photo-1619767886558-efdc259cde1a",
+    image: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&auto=format&fit=crop",
   },
   {
     id: 2,
-    brand: "BYD",
-    name: "BYD Seal",
-    spec: "Long Range Dual Motor",
-    image:
-      "https://images.unsplash.com/photo-1701343870306-3f0a8c3d2c98",
+    brand: "PORSCHE",
+    name: "Taycan Turbo S",
+    spec: "Electric Sedan",
+    image: "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=800&h=400&q=80&fit=crop",
   },
   {
     id: 3,
     brand: "BMW",
     name: "BYD BX3",
     spec: "Long Range Dual Motor",
-    image:
-      "https://images.unsplash.com/photo-1549927681-0b673b8243ab",
+    image: "https://images.unsplash.com/photo-1549927681-0b673b8243ab?w-800&auto=format&fit=crop",
   },
   {
     id: 4,
     brand: "XIAOMI",
     name: "SU7",
     spec: "Long Range Dual Motor",
-    image:
-      "https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9",
+    image: "https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?w=800&auto=format&fit=crop",
   },
   {
     id: 5,
     brand: "AUDI",
     name: "Audi Q8 e-tron",
     spec: "Long Range Dual Motor",
-    image:
-      "https://images.unsplash.com/photo-1617531653332-bd46c24f2068",
+    image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&auto=format&fit=crop",
   },
   {
     id: 6,
     brand: "BMW",
     name: "BMW iX3",
     spec: "Long Range Dual Motor",
-    image:
-      "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2",
+    image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&auto=format&fit=crop",
   },
 ]
 
