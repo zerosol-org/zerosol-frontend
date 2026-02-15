@@ -3,9 +3,9 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset }) => {
   const rightActive = Boolean(rightCar)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
       {/* TOP SUMMARY */}
-      <div className="space-y-4 sm:space-y-6 mb-8 sm:mb-16">
+      <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-12">
         <SummaryRow
           label="Fuel Economy"
           leftActive={leftActive}
@@ -60,10 +60,10 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset }) => {
       />
 
       {/* CTA */}
-      <div className="flex justify-center mt-12 sm:mt-20">
+      <div className="flex justify-center mt-8 sm:mt-12">
         <button
           onClick={onReset}
-          className="px-6 py-3 rounded-full bg-black text-white text-sm font-medium hover:bg-gray-900 transition w-full sm:w-auto"
+          className="px-5 sm:px-6 py-2 sm:py-3 rounded-full bg-black text-white text-sm sm:text-base font-medium hover:bg-gray-900 transition w-full sm:w-auto"
         >
           Start New Comparison
         </button>
@@ -75,13 +75,12 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset }) => {
 /* ================= SUMMARY ROW ================= */
 
 const SummaryRow = ({ label, leftActive, rightActive }) => (
-  <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 items-start sm:items-center">
-    <div className="w-full sm:w-40 text-sm font-medium text-gray-600">
+  <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 items-start sm:items-center w-full">
+    <div className="w-full sm:w-40 text-sm sm:text-base font-medium text-gray-600">
       {label}
     </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full flex-1">
-
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full">
       {/* LEFT CAR */}
       <div
         className={`grid grid-cols-3 gap-2 p-2 rounded-xl transition
@@ -103,7 +102,6 @@ const SummaryRow = ({ label, leftActive, rightActive }) => (
         <SummaryPill side="right" active={rightActive} value="per year" />
         <SummaryPill side="right" active={rightActive} value="annual" />
       </div>
-
     </div>
   </div>
 )
@@ -123,7 +121,7 @@ const SummaryPill = ({ value, active, side }) => {
 
   return (
     <div
-      className={`text-xs font-semibold text-center py-2 rounded-lg transition
+      className={`text-xs sm:text-sm font-semibold text-center py-2 rounded-lg transition
         ${active ? activeStyles : inactiveStyles}
       `}
     >
@@ -135,8 +133,8 @@ const SummaryPill = ({ value, active, side }) => {
 /* ================= SPEC SECTION ================= */
 
 const SpecSection = ({ title, rows, leftActive, rightActive }) => (
-  <div className="mb-8 sm:mb-16">
-    <h3 className="text-sm font-semibold text-gray-500 mb-4">
+  <div className="mb-6 sm:mb-12">
+    <h3 className="text-sm sm:text-base font-semibold text-gray-500 mb-3 sm:mb-4">
       {title}
     </h3>
 
@@ -158,16 +156,16 @@ const SpecSection = ({ title, rows, leftActive, rightActive }) => (
 /* ================= SPEC ROW ================= */
 
 const SpecRow = ({ label, left, right, leftActive, rightActive }) => (
-  <div className="grid grid-cols-[160px_1fr_1fr] gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr_1fr] gap-4 sm:gap-6">
 
     {/* LABEL */}
-    <div className="text-sm text-gray-600 py-3">
+    <div className="text-sm sm:text-base text-gray-600 py-2 sm:py-3">
       {label}
     </div>
 
     {/* LEFT CAR */}
     <div
-      className={`py-3 px-4 rounded-lg font-medium transition text-left
+      className={`py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-medium transition text-left
         ${leftActive
           ? "bg-blue-100 text-blue-900"
           : "bg-blue-50 text-blue-300"
@@ -179,7 +177,7 @@ const SpecRow = ({ label, left, right, leftActive, rightActive }) => (
 
     {/* RIGHT CAR */}
     <div
-      className={`py-3 px-4 rounded-lg font-medium transition text-left
+      className={`py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-medium transition text-left
         ${rightActive
           ? "bg-gray-200 text-gray-900"
           : "bg-gray-100 text-gray-400"

@@ -38,13 +38,13 @@ export default function ComparisonHeader({
               </div>
               <button 
                 onClick={onAddFirst}
-                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                className="text-xs cursor-pointer text-blue-600 hover:text-blue-800 flex items-center gap-1"
               >
                 <Edit size={14} /> Change
               </button>
               <button 
                 onClick={onRemoveFirst}
-                className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                className="cursor-pointer text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
               >
                 <X size={14} /> Remove
               </button>
@@ -52,7 +52,7 @@ export default function ComparisonHeader({
           ) : (
             <button
               onClick={onAddFirst}
-              className="flex items-center justify-center gap-2 h-16 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
+              className="flex cursor-pointer items-center justify-center gap-2 h-16 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
             >
               <Plus size={18} />
               <span className="text-sm font-medium">Add First Car</span>
@@ -73,13 +73,13 @@ export default function ComparisonHeader({
               </div>
               <button 
                 onClick={onAddSecond}
-                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                className="text-xs cursor-pointer text-blue-600 hover:text-blue-800 flex items-center gap-1"
               >
                 <Edit size={14} /> Change
               </button>
               <button 
                 onClick={onRemoveSecond}
-                className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
+                className="text-xs cursor-pointer text-red-600 hover:text-red-800 flex items-center gap-1"
               >
                 <X size={14} /> Remove
               </button>
@@ -87,7 +87,7 @@ export default function ComparisonHeader({
           ) : (
             <button
               onClick={onAddSecond}
-              className="flex items-center justify-center gap-2 h-16 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
+              className="flex cursor-pointer items-center justify-center gap-2 h-16 border border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-700 transition"
             >
               <Plus size={18} />
               <span className="text-sm font-medium">Add Second Car</span>
