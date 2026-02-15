@@ -55,12 +55,14 @@ export default function ComparisonPage() {
           car={firstCar}
           placeholder="First Car"
           onAdd={() => openModalFor("first")}
+          variant="primary"
         />
 
         <ComparisonCard
           car={secondCar}
           placeholder="Second Car"
           onAdd={() => openModalFor("second")}
+          variant="secondary"
         />
       </main>
        {/* 👇 THIS SECTION */}

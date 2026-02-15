@@ -1,65 +1,91 @@
 const cars = [
   {
     id: 1,
-    brand: "TESLA",
+    brand: "Tesla",
     name: "2024 Model 3",
     spec: "Long Range Dual Motor",
-    image: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&auto=format&fit=crop",
+    category: "Sedan",
+    fuel: "Electric",
+    image:
+      "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=600&q=80&auto=format&fit=crop",
   },
   {
     id: 2,
-    brand: "PORSCHE",
+    brand: "Porsche",
     name: "Taycan Turbo S",
     spec: "Electric Sedan",
-    image: "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=800&h=400&q=80&fit=crop",
+    category: "Sedan",
+    fuel: "Electric",
+    image:
+      "https://images.unsplash.com/photo-1553440569-bcc63803a83d?w=600&q=80&auto=format&fit=crop",
   },
   {
     id: 3,
     brand: "BMW",
-    name: "BYD BX3",
-    spec: "Long Range Dual Motor",
-    image: "https://images.unsplash.com/photo-1549927681-0b673b8243ab?w-800&auto=format&fit=crop",
+    name: "BMW iX3",
+    spec: "Long Range",
+    category: "SUV",
+    fuel: "Electric",
+    image:
+      "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=600&q=80&auto=format&fit=crop",
   },
   {
     id: 4,
-    brand: "XIAOMI",
-    name: "SU7",
-    spec: "Long Range Dual Motor",
-    image: "https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?w=800&auto=format&fit=crop",
+    brand: "Audi",
+    name: "Q8 e-tron",
+    spec: "Premium SUV",
+    category: "SUV",
+    fuel: "Electric",
+    image:
+      "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=600&q=80&auto=format&fit=crop",
   },
   {
     id: 5,
-    brand: "AUDI",
-    name: "Audi Q8 e-tron",
-    spec: "Long Range Dual Motor",
-    image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800&auto=format&fit=crop",
+    brand: "Toyota",
+    name: "RAV4 Hybrid",
+    spec: "Hybrid SUV",
+    category: "SUV",
+    fuel: "Hybrid",
+    image:
+      "https://images.unsplash.com/photo-1549927681-0b673b8243ab?w=600&q=80&auto=format&fit=crop",
   },
   {
     id: 6,
-    brand: "BMW",
-    name: "BMW iX3",
-    spec: "Long Range Dual Motor",
-    image: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&auto=format&fit=crop",
+    brand: "Honda",
+    name: "Civic",
+    spec: "Compact Sedan",
+    category: "Sedan",
+    fuel: "Petrol",
+    image:
+      "https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?w=600&q=80&auto=format&fit=crop",
   },
 ]
 
-export default function PopularPicks({ onSelect }) {
+export default function PopularPicks({
+  onSelect,
+  search,
+  category,
+  fuel,
+  brand,
+}) {
+  const filteredCars = cars.filter((car) => {
+    const matchesSearch =
+      car.name.toLowerCase().includes(search.toLowerCase()) ||
+      car.brand.toLowerCase().includes(search.toLowerCase())
+
+    return (
+      matchesSearch &&
+      (category === "All" || car.category === category) &&
+      (fuel === "All" || car.fuel === fuel) &&
+      (brand === "All" || car.brand === brand)
+    )
+  })
+
   return (
-    <section className="max-w-7xl mx-auto px-6 py-10">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-          Popular Picks
-        </h2>
-
-        <button className="text-sm text-blue-600 hover:underline">
-          View all
-        </button>
-      </div>
-
+    <section>
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cars.map((car) => (
+        {filteredCars.map((car) => (
           <div
             key={car.id}
             className="bg-white rounded-xl border border-gray-200 hover:shadow-md transition"
@@ -69,6 +95,8 @@ export default function PopularPicks({ onSelect }) {
               <img
                 src={car.image}
                 alt={car.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -97,6 +125,12 @@ export default function PopularPicks({ onSelect }) {
           </div>
         ))}
       </div>
+
+      {filteredCars.length === 0 && (
+        <p className="text-center text-sm text-gray-500 mt-8">
+          No vehicles match your filters.
+        </p>
+      )}
     </section>
   )
 }
