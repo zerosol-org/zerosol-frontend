@@ -1,84 +1,32 @@
-// src/pages/Admin/VehicleDetails.jsx
+// src/pages/VehicleDetails.jsx
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { 
-  ArrowLeft, Edit, Trash2, Battery, Fuel, DollarSign, 
-  Gauge, Calendar, Wind, Wrench, Car,  
-  Ruler, Cpu
-} from 'lucide-react'
-import toast from 'react-hot-toast'
-import { adminService } from '../../services/adminService'
-import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
-import AdminLayout from '../../components/admin/AdminLayout'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Battery, Fuel, Gauge, Calendar, Wind, Wrench, Car, Ruler, Cpu, DollarSign } from 'lucide-react'
+import { vehicleService } from '../../services/vehicleService'
+import Navbar from '../../components/Navbar'
+import Footer from '../../components/Footer'
 
 export default function VehicleDetails() {
   const { type, id } = useParams()
   const navigate = useNavigate()
-  
   const [vehicle, setVehicle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  
-  // Delete modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    if (!id || id === 'undefined' || id === 'null' || id === 'new') {
-      setError('Invalid vehicle ID')
-      setLoading(false)
-      return
-    }
-    
     loadVehicle()
-  }, [id, type])
+  }, [type, id])
 
   const loadVehicle = async () => {
     setLoading(true)
-    setError(null)
-    
     try {
-      let data
-      if (type === 'ev') {
-        data = await adminService.getEVVehicle(id)
-      } else {
-        data = await adminService.getICEVehicle(id)
-      }
+      const data = await vehicleService.getVehicleById(id, type)
       setVehicle(data)
-    } catch (err) {
-      console.error('Error loading vehicle:', err)
-      setError(err.message || 'Failed to load vehicle')
-      toast.error(err.message || 'Failed to load vehicle')
+    } catch (error) {
+      console.error('Error loading vehicle:', error)
+      setError('Failed to load vehicle details')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const openDeleteModal = () => {
-    setDeleteModalOpen(true)
-  }
-
-  const closeDeleteModal = () => {
-    setDeleteModalOpen(false)
-    setIsDeleting(false)
-  }
-
-  const handleDelete = async () => {
-    setIsDeleting(true)
-    
-    try {
-      if (type === 'ev') {
-        await adminService.deleteEVVehicle(id)
-      } else {
-        await adminService.deleteICEVehicle(id)
-      }
-      
-      toast.success(`${vehicle.make} ${vehicle.model} deleted successfully!`)
-      navigate('/admin')
-    } catch (err) {
-      toast.error(`Failed to delete: ${err.message}`)
-      setIsDeleting(false)
-      closeDeleteModal()
     }
   }
 
@@ -119,79 +67,66 @@ export default function VehicleDetails() {
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex justify-center items-center h-64">
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
-      </AdminLayout>
+        <Footer />
+      </>
     )
   }
 
   if (error || !vehicle) {
     return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-            {error || 'Vehicle not found'}
+      <>
+        <Navbar />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500 mb-4">{error || 'Vehicle not found'}</p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Go Home
+            </button>
           </div>
-          <button
-            onClick={() => navigate('/admin')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Back to Dashboard
-          </button>
         </div>
-      </AdminLayout>
+        <Footer />
+      </>
     )
   }
 
   return (
-    <AdminLayout>
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <>
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        >
+          <ArrowLeft size={20} />
+          <span>Back</span>
+        </button>
+
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/admin')}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-              title="Back to Dashboard"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {vehicle.make} {vehicle.model}
-              </h1>
-              <p className="text-sm text-gray-500">
-                {type === 'ev' ? 'Electric Vehicle' : 'ICE Vehicle'} · ID: {vehicle.id}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-2 ml-auto">
-            <Link
-              to={`/admin/vehicles/${type}/${id}/edit`}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <Edit size={18} />
-              <span className="hidden sm:inline">Edit</span>
-            </Link>
-            <button
-              onClick={openDeleteModal}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              <Trash2 size={18} />
-              <span className="hidden sm:inline">Delete</span>
-            </button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {vehicle.make} {vehicle.model}
+          </h1>
+          <p className="text-gray-500 mt-1">
+            {vehicle.category} · {type === 'ev' ? 'Electric Vehicle' : 'ICE Vehicle'}
+          </p>
         </div>
 
         {/* Vehicle Image */}
-        <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
+        <div className="mb-8 bg-white rounded-xl border border-gray-200 p-8">
           <div className="flex justify-center">
             <img
               src={vehicle.image_url || 'https://placehold.co/600x400/EEE/31343C?text=No+Image'}
               alt={`${vehicle.make} ${vehicle.model}`}
-              className="h-32 sm:h-48 object-contain"
+              className="h-64 object-contain"
             />
           </div>
         </div>
@@ -204,7 +139,6 @@ export default function VehicleDetails() {
             <InfoRow label="Category" value={vehicle.category} />
             <InfoRow label="Seating Capacity" value={vehicle.seating_capacity} />
             <InfoRow label="Horsepower" value={vehicle.horsepower} />
-            <InfoRow label="Created At" value={vehicle.created_at ? new Date(vehicle.created_at).toLocaleDateString() : '-'} />
           </InfoSection>
 
           <InfoSection title="Pricing" icon={DollarSign}>
@@ -289,16 +223,8 @@ export default function VehicleDetails() {
             </InfoSection>
           </div>
         )}
-
-        {/* Delete Confirmation Modal */}
-        <DeleteConfirmationModal
-          isOpen={deleteModalOpen}
-          onClose={closeDeleteModal}
-          onConfirm={handleDelete}
-          vehicleName={vehicle ? `${vehicle.make} ${vehicle.model}` : ''}
-          isDeleting={isDeleting}
-        />
       </div>
-    </AdminLayout>
+      <Footer />
+    </>
   )
 }

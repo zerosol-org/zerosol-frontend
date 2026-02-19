@@ -1,5 +1,5 @@
 // src/components/admin/AdminLayout.jsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { 
   LogOut, 
@@ -28,10 +28,38 @@ export default function AdminLayout({ children }) {
   const location = useLocation()
   const { user, signOut } = useAdminAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showChangeEmail, setShowChangeEmail] = useState(false)
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
+      // On desktop, sidebar should be open by default
+      if (!mobile) {
+        setSidebarOpen(true)
+      } else {
+        setSidebarOpen(false)
+      }
+    }
+
+    // Set initial state
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Close sidebar when route changes on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false)
+    }
+  }, [location.pathname, isMobile])
 
   const handleLogout = async () => {
     try {
@@ -54,6 +82,16 @@ export default function AdminLayout({ children }) {
     { path: '/', icon: Home, label: 'View Site' },
   ]
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen)
+  }
+
+  const closeSidebar = () => {
+    if (isMobile) {
+      setSidebarOpen(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation Bar */}
@@ -63,8 +101,9 @@ export default function AdminLayout({ children }) {
             {/* Left side - Menu toggle and logo */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={toggleSidebar}
                 className="p-2 rounded-lg hover:bg-gray-100 transition lg:hidden"
+                aria-label="Toggle menu"
               >
                 <Menu size={20} className="text-gray-600" />
               </button>
@@ -171,11 +210,11 @@ export default function AdminLayout({ children }) {
         </div>
       </nav>
 
-      {/* Sidebar Overlay (mobile) */}
-      {sidebarOpen && (
+      {/* Sidebar Overlay (mobile only) */}
+      {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={closeSidebar}
         />
       )}
 
@@ -183,32 +222,35 @@ export default function AdminLayout({ children }) {
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0`}
+        }`}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <Link to="/admin" className="flex items-center gap-2">
+          <Link to="/admin" className="flex items-center gap-2" onClick={closeSidebar}>
             <div className="">
               <img src={Logo} alt="Logo" className="w-[5rem] h-auto" />
             </div>
             <span className="font-semibold text-gray-900">Admin Panel</span>
           </Link>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition lg:hidden"
-          >
-            <X size={18} className="text-gray-600" />
-          </button>
+          {isMobile && (
+            <button
+              onClick={closeSidebar}
+              className="p-2 rounded-lg hover:bg-gray-100 transition"
+              aria-label="Close menu"
+            >
+              <X size={18} className="text-gray-600" />
+            </button>
+          )}
         </div>
 
         {/* Sidebar Navigation */}
-        <nav className="p-4">
+        <nav className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 8rem)' }}>
           <ul className="space-y-2">
             {navItems.map((item) => (
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={closeSidebar}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                     isActive(item.path)
                       ? 'bg-blue-50 text-blue-600'
@@ -224,7 +266,7 @@ export default function AdminLayout({ children }) {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
               <User size={16} className="text-gray-600" />
@@ -239,10 +281,12 @@ export default function AdminLayout({ children }) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className={`pt-16 transition-all duration-300 ${
-        sidebarOpen ? 'lg:pl-64' : ''
-      }`}>
+      {/* Main Content - with proper margin for desktop sidebar */}
+      <main 
+        className={`pt-16 transition-all duration-300 ${
+          !isMobile && sidebarOpen ? 'lg:ml-64' : ''
+        }`}
+      >
         <div className="min-h-[calc(100vh-4rem)]">
           {children}
         </div>

@@ -6,6 +6,7 @@ import Login from './pages/admin/Login'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import VehicleForm from './pages/admin/VehicleForm'
 import VehicleDetails from './pages/admin/VehicleDetails'
+import PublicVehicleDetails from './pages/admin/VehicleDetails'
 import VehicleList from './pages/admin/VehicleList'
 import Home from './pages/Home'
 import ResetPasswordPage from './pages/admin/ResetPasswordPage'
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/vehicle/:type/:id" element={<PublicVehicleDetails />} />
         
         {/* Protected Admin Routes */}
         <Route path="/admin" element={

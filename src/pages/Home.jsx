@@ -1,7 +1,4 @@
 import Navbar from "../components/Navbar"
-import CarComparison from "../components/CarComparison"
-import ComparisonHeader from "../components/ComparisonHeader"
-import PopularPicks from "../components/PopularPicks"
 import ComparisonPage from "../components/ComparisonPage"
 import Footer from "../components/Footer"
 
