@@ -8,13 +8,15 @@ import {
   PlusCircle,
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Upload
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/adminService'
 import StatsCards from '../../components/admin/StatsCards'
 import DataTable from '../../components/admin/DataTable'
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
+import BulkUploadModal from '../../components/admin/BulkUploadModal'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 export default function AdminDashboard() {
@@ -27,6 +29,9 @@ export default function AdminDashboard() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [vehicleToDelete, setVehicleToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Bulk upload modal state
+  const [showBulkUpload, setShowBulkUpload] = useState(false)
   
   const [stats, setStats] = useState({
     totalEV: 0,
@@ -145,6 +150,12 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleBulkUploadSuccess = () => {
+    loadVehicles()
+    loadStats()
+    setShowBulkUpload(false)
+  }
+
   const columns = [
     { 
       key: 'image', 
@@ -198,21 +209,21 @@ export default function AdminDashboard() {
           <Link
             to={`/admin/vehicles/${row.type}/${row.displayId}`}
             className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-            title="View"
+            title="View Details"
           >
             <Eye size={18} />
           </Link>
           <Link
             to={`/admin/vehicles/${row.type}/${row.displayId}/edit`}
             className="p-1 text-green-600 hover:bg-green-50 rounded"
-            title="Edit"
+            title="Edit Vehicle"
           >
             <Edit size={18} />
           </Link>
           <button
             onClick={() => openDeleteModal(row)}
             className="p-1 text-red-600 hover:bg-red-50 rounded"
-            title="Delete"
+            title="Delete Vehicle"
           >
             <Trash2 size={18} />
           </button>
@@ -225,18 +236,29 @@ export default function AdminDashboard() {
     <AdminLayout>
       <div className="p-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
             <p className="text-sm text-gray-500">Manage your vehicle database</p>
           </div>
-          <Link
-            to={`/admin/vehicles/${activeTab}/new`}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            <PlusCircle size={18} />
-            Add New Vehicle
-          </Link>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setShowBulkUpload(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              <Upload size={18} />
+              <span className="hidden sm:inline">Bulk Upload</span>
+              <span className="sm:hidden">Bulk</span>
+            </button>
+            <Link
+              to={`/admin/vehicles/${activeTab}/new`}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              <PlusCircle size={18} />
+              <span className="hidden sm:inline">Add New</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -312,6 +334,14 @@ export default function AdminDashboard() {
           onConfirm={handleDelete}
           vehicleName={vehicleToDelete ? `${vehicleToDelete.make} ${vehicleToDelete.model}` : ''}
           isDeleting={isDeleting}
+        />
+
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          isOpen={showBulkUpload}
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={handleBulkUploadSuccess}
+          vehicleType={activeTab}
         />
       </div>
     </AdminLayout>

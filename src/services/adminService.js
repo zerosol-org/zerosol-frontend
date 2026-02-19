@@ -445,6 +445,103 @@ export const adminService = {
     }
   },
 
+
+  // Check if EV vehicle exists
+  async getEVVehicleByMakeAndModel(make, model) {
+    const { data, error } = await supabase
+      .from('ev_vehicles')
+      .select('id')
+      .eq('make', make)
+      .eq('model', model)
+      .maybeSingle()
+    
+    if (error) throw error
+    if (!data) throw new Error('Vehicle not found')
+    return data
+  },
+
+  // Check if ICE vehicle exists
+  async getICEVehicleByMakeAndModel(make, model) {
+    const { data, error } = await supabase
+      .from('ice_vehicles')
+      .select('id')
+      .eq('make', make)
+      .eq('model', model)
+      .maybeSingle()
+    
+    if (error) throw error
+    if (!data) throw new Error('Vehicle not found')
+    return data
+  },
+  // Add these methods to adminService.js
+
+// Upload image from binary data
+async uploadImageFromBinary(imageData, fileName, make, model) {
+  try {
+    // Generate a clean filename
+    const cleanMake = make.replace(/[^a-zA-Z0-9]/g, '_')
+    const cleanModel = model.replace(/[^a-zA-Z0-9]/g, '_')
+    const timestamp = Date.now()
+    const filePath = `vehicles/${cleanMake}_${cleanModel}_${timestamp}.png`
+    
+    // Convert base64 to blob if needed
+    let blob
+    if (typeof imageData === 'string' && imageData.includes('base64')) {
+      // Handle base64 string
+      const base64Data = imageData.split(',')[1] || imageData
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      blob = new Blob([byteArray], { type: 'image/png' })
+    } else if (imageData instanceof Uint8Array) {
+      // Handle Uint8Array
+      blob = new Blob([imageData], { type: 'image/png' })
+    } else {
+      // Assume it's already a blob
+      blob = imageData
+    }
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from('ev-images')
+      .upload(filePath, blob, {
+        contentType: 'image/png',
+        upsert: true
+      })
+
+    if (uploadError) throw uploadError
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('ev-images')
+      .getPublicUrl(filePath)
+
+    return publicUrl
+  } catch (error) {
+    console.error('Error uploading image from binary:', error)
+    throw error
+  }
+},
+
+// Upload multiple images in batch
+async uploadBatchImages(images) {
+  const results = await Promise.allSettled(
+    images.map(async (img) => {
+      const url = await this.uploadImageFromBinary(
+        img.data,
+        img.make,
+        img.model
+      )
+      return { ...img, url }
+    })
+  )
+  
+  return results
+},
+
   // ==================== UTILITY ====================
   
   async getAllVehicles() {

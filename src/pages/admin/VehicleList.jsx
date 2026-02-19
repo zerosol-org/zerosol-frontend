@@ -3,13 +3,14 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { 
   Eye, Edit, Trash2, Battery, Fuel, 
-  PlusCircle, AlertCircle, ArrowLeft
+  PlusCircle, AlertCircle, ArrowLeft, Upload
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/adminService'
 import AdminLayout from '../../components/admin/AdminLayout'
 import DataTable from '../../components/admin/DataTable'
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
+import BulkUploadModal from '../../components/admin/BulkUploadModal'
 
 export default function VehicleList() {
   const { type } = useParams()
@@ -21,6 +22,9 @@ export default function VehicleList() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [vehicleToDelete, setVehicleToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Bulk upload modal state
+  const [showBulkUpload, setShowBulkUpload] = useState(false)
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -107,6 +111,11 @@ export default function VehicleList() {
     }
   }
 
+  const handleBulkUploadSuccess = () => {
+    loadVehicles()
+    setShowBulkUpload(false)
+  }
+
   const columns = [
     { 
       key: 'image', 
@@ -128,6 +137,11 @@ export default function VehicleList() {
       render: (row) => row.price_usd ? `$${Number(row.price_usd).toLocaleString()}` : '-'
     },
     { 
+      key: 'price_ghs', 
+      label: 'Price (GHS)',
+      render: (row) => row.price_ghs ? `₵${Number(row.price_ghs).toLocaleString()}` : '-'
+    },
+    { 
       key: 'fuel_economy_per_100km', 
       label: 'Fuel/100km',
       render: (row) => row.fuel_economy_per_100km ? `${row.fuel_economy_per_100km}` : '-'
@@ -137,6 +151,11 @@ export default function VehicleList() {
       label: 'HP',
       render: (row) => row.horsepower || '-'
     },
+    { 
+      key: 'seating_capacity', 
+      label: 'Seats',
+      render: (row) => row.seating_capacity || '-'
+    },
     {
       key: 'actions',
       label: 'Actions',
@@ -145,21 +164,21 @@ export default function VehicleList() {
           <Link
             to={`/admin/vehicles/${row.type}/${row.displayId}`}
             className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-            title="View"
+            title="View Details"
           >
             <Eye size={18} />
           </Link>
           <Link
             to={`/admin/vehicles/${row.type}/${row.displayId}/edit`}
             className="p-1 text-green-600 hover:bg-green-50 rounded"
-            title="Edit"
+            title="Edit Vehicle"
           >
             <Edit size={18} />
           </Link>
           <button
             onClick={() => openDeleteModal(row)}
             className="p-1 text-red-600 hover:bg-red-50 rounded"
-            title="Delete"
+            title="Delete Vehicle"
           >
             <Trash2 size={18} />
           </button>
@@ -200,13 +219,24 @@ export default function VehicleList() {
               </p>
             </div>
           </div>
-          <Link
-            to={`/admin/vehicles/${type}/new`}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            <PlusCircle size={18} />
-            Add New {type === 'ev' ? 'EV' : 'ICE'}
-          </Link>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setShowBulkUpload(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              <Upload size={18} />
+              <span className="hidden sm:inline">Bulk Upload</span>
+              <span className="sm:hidden">Bulk</span>
+            </button>
+            <Link
+              to={`/admin/vehicles/${type}/new`}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              <PlusCircle size={18} />
+              <span className="hidden sm:inline">Add New</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -247,6 +277,14 @@ export default function VehicleList() {
           onConfirm={handleDelete}
           vehicleName={vehicleToDelete ? `${vehicleToDelete.make} ${vehicleToDelete.model}` : ''}
           isDeleting={isDeleting}
+        />
+
+        {/* Bulk Upload Modal */}
+        <BulkUploadModal
+          isOpen={showBulkUpload}
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={handleBulkUploadSuccess}
+          vehicleType={type}
         />
       </div>
     </AdminLayout>
