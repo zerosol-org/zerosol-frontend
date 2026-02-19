@@ -8,7 +8,7 @@ export default function PopularPicks({
   search,
   category,
   fuel,
-  brand,
+  make, // Changed from brand to make
 }) {
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -25,7 +25,7 @@ export default function PopularPicks({
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [search, category, fuel, brand])
+  }, [search, category, fuel, make])
 
   const loadVehicles = async () => {
     try {
@@ -35,17 +35,17 @@ export default function PopularPicks({
       // Clean the data - trim spaces and standardize case for filtering
       const cleanedData = data.map(v => ({
         ...v,
-        brand: v.brand?.trim(),
+        make: v.make?.trim(), // Using make instead of brand
         category: v.category?.trim(),
         name: v.name?.trim(),
         fullName: v.fullName?.trim(),
-        type: v.type, // This will be 'ev' or 'ice' (lowercase)
+        type: v.type,
         // Store original for display
-        displayBrand: v.brand,
+        displayMake: v.make,
         displayCategory: v.category
       }))
       
-      console.log('Loaded vehicles:', cleanedData) // Debug log
+      console.log('Loaded vehicles:', cleanedData)
       setVehicles(cleanedData)
     } catch (err) {
       console.error('Error loading vehicles:', err)
@@ -60,7 +60,7 @@ export default function PopularPicks({
     // Search filter - case insensitive
     const matchesSearch = search === "" || 
       (car.fullName && car.fullName.toLowerCase().includes(search.toLowerCase())) ||
-      (car.brand && car.brand.toLowerCase().includes(search.toLowerCase())) ||
+      (car.make && car.make.toLowerCase().includes(search.toLowerCase())) ||
       (car.name && car.name.toLowerCase().includes(search.toLowerCase()))
 
     // Category filter - case insensitive
@@ -69,15 +69,15 @@ export default function PopularPicks({
 
     // Fuel filter - handles both EV and ICE vehicles
     const matchesFuel = fuel === "All" || 
-      (fuel === "Electric" && car.type === "ev") || // Changed from 'EV' to 'ev'
-      (fuel !== "Electric" && car.type === "ice" && // Changed from 'ICE' to 'ice'
+      (fuel === "Electric" && car.type === "ev") ||
+      (fuel !== "Electric" && car.type === "ice" && 
        car.fuel && car.fuel.toLowerCase() === fuel.toLowerCase())
 
-    // Brand filter - case insensitive
-    const matchesBrand = brand === "All" || 
-      (car.brand && car.brand.toLowerCase() === brand.toLowerCase())
+    // Make filter - case insensitive
+    const matchesMake = make === "All" || 
+      (car.make && car.make.toLowerCase() === make.toLowerCase())
 
-    return matchesSearch && matchesCategory && matchesFuel && matchesBrand
+    return matchesSearch && matchesCategory && matchesFuel && matchesMake
   })
 
   // Pagination calculations
@@ -98,7 +98,7 @@ export default function PopularPicks({
 
   const handleImageError = (e) => {
     e.target.src = 'https://placehold.co/600x400/EEE/31343C?text=No+Image'
-    e.target.onerror = null // Prevent infinite loop
+    e.target.onerror = null
   }
 
   if (loading) {
@@ -174,7 +174,7 @@ export default function PopularPicks({
             <div className="p-4">
               <div className="flex justify-between items-start mb-1">
                 <p className="text-xs font-semibold text-blue-600 uppercase">
-                  {car.displayBrand || car.brand}
+                  {car.displayMake || car.make}
                 </p>
                 <span className={`text-xs px-2 py-1 rounded-full ${
                   car.type === 'ev' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
@@ -199,7 +199,7 @@ export default function PopularPicks({
                   <span className="font-medium">0-60:</span> {car.acceleration_0_60_mph || 'N/A'}s
                 </div>
                 <div>
-                  <span className="font-medium">Top Speed:</span> {car.top_speed_kmh || 'N/A'}km/h
+                  <span className="font-medium">Top Speed:</span> {car.top_speed_kmh || car.top_speed || 'N/A'}km/h
                 </div>
                 <div>
                   <span className="font-medium">Seats:</span> {car.seating_capacity || 'N/A'}
