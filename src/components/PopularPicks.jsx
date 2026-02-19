@@ -39,11 +39,13 @@ export default function PopularPicks({
         category: v.category?.trim(),
         name: v.name?.trim(),
         fullName: v.fullName?.trim(),
-        // Store original for display, but use cleaned for filtering
+        type: v.type, // This will be 'ev' or 'ice' (lowercase)
+        // Store original for display
         displayBrand: v.brand,
         displayCategory: v.category
       }))
       
+      console.log('Loaded vehicles:', cleanedData) // Debug log
       setVehicles(cleanedData)
     } catch (err) {
       console.error('Error loading vehicles:', err)
@@ -67,8 +69,8 @@ export default function PopularPicks({
 
     // Fuel filter - handles both EV and ICE vehicles
     const matchesFuel = fuel === "All" || 
-      (fuel === "Electric" && car.type === "EV") ||
-      (fuel !== "Electric" && car.type === "ICE" && 
+      (fuel === "Electric" && car.type === "ev") || // Changed from 'EV' to 'ev'
+      (fuel !== "Electric" && car.type === "ice" && // Changed from 'ICE' to 'ice'
        car.fuel && car.fuel.toLowerCase() === fuel.toLowerCase())
 
     // Brand filter - case insensitive
@@ -92,6 +94,11 @@ export default function PopularPicks({
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(Number(e.target.value))
     setCurrentPage(1)
+  }
+
+  const handleImageError = (e) => {
+    e.target.src = 'https://placehold.co/600x400/EEE/31343C?text=No+Image'
+    e.target.onerror = null // Prevent infinite loop
   }
 
   if (loading) {
@@ -154,14 +161,12 @@ export default function PopularPicks({
             {/* Image */}
             <div className="h-40 overflow-hidden rounded-t-xl bg-gray-100">
               <img
-                src={car.image}
+                src={car.image_url || 'https://placehold.co/600x400/EEE/31343C?text=No+Image'}
                 alt={car.fullName}
                 loading="lazy"
                 decoding="async"
                 className="w-full h-full object-contain p-2"
-                onError={(e) => {
-                  e.target.src = 'https://placehold.co/600x400/EEE/31343C?text=No+Image'
-                }}
+                onError={handleImageError}
               />
             </div>
 
@@ -172,9 +177,9 @@ export default function PopularPicks({
                   {car.displayBrand || car.brand}
                 </p>
                 <span className={`text-xs px-2 py-1 rounded-full ${
-                  car.type === 'EV' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                  car.type === 'ev' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                 }`}>
-                  {car.type === 'EV' ? 'Electric' : car.fuel || 'ICE'}
+                  {car.type === 'ev' ? 'Electric' : 'ICE'}
                 </span>
               </div>
 
@@ -191,10 +196,10 @@ export default function PopularPicks({
                   <span className="font-medium">HP:</span> {car.horsepower || 'N/A'}
                 </div>
                 <div>
-                  <span className="font-medium">0-60:</span> {car.acceleration || 'N/A'}s
+                  <span className="font-medium">0-60:</span> {car.acceleration_0_60_mph || 'N/A'}s
                 </div>
                 <div>
-                  <span className="font-medium">Top Speed:</span> {car.top_speed || 'N/A'}km/h
+                  <span className="font-medium">Top Speed:</span> {car.top_speed_kmh || 'N/A'}km/h
                 </div>
                 <div>
                   <span className="font-medium">Seats:</span> {car.seating_capacity || 'N/A'}

@@ -8,8 +8,9 @@ const formatCurrency = (value) => {
 }
 
 const formatEmissions = (value) => {
-  if (!value) return '0 kgCO₂e'
-  return `${Number(value).toFixed(2)} kgCO₂e`
+  console.log('Formatting emissions value:', value)
+  if (value === null || value === undefined || value === '') return '0 kgCO₂e'
+  return `${Number(value)} kgCO₂e`
 }
 
 const ComparisonCard = ({
@@ -31,26 +32,59 @@ const ComparisonCard = ({
     ? "border-gray-500"
     : "border-gray-200"
 
-  // Get TCO and emissions based on selected years
+  // Get TCO based on selected years
   const getTCO = () => {
-    if (!car?.tco) return '-'
-    const yearKey = `year${years}`
-    return formatCurrency(car.tco[yearKey])
+    if (!car) return '-'
+    
+    // Try to get from tco object first, then direct fields
+    if (car.tco) {
+      const yearKey = `year${years}`
+      return formatCurrency(car.tco[yearKey])
+    }
+    
+    // Fallback to direct fields
+    const tcoField = `tco_yr${years}`
+    return formatCurrency(car[tcoField])
   }
 
+  // Get emissions based on selected years
   const getEmissions = () => {
-    if (!car?.emissions) return '-'
-    const yearKey = `year${years}`
-    return formatEmissions(car.emissions[yearKey])
+    if (!car) return '-'
+    
+    // Try to get from emissions object first
+    if (car.emissions) {
+      const yearKey = `year${years}`
+      return formatEmissions(car.emissions[yearKey])
+    }
+    
+    // Fallback to direct fields
+    const emissionsField = `tailpipe_emissions_yr${years}`
+    return formatEmissions(car[emissionsField])
   }
 
   const getFuelEconomy = () => {
     if (!car) return '-'
-    if (car.type === 'EV') {
-      return `₵${car.price_ghs?.toFixed(2) || '0'}/km`
+    
+    // For EVs, show kWh, for ICE show L/100km or GHS/km
+    if (car.type === 'ev') {
+      if (car.fuel_economy_per_100km) {
+        return `${car.fuel_economy_per_100km} kWh/100km`
+      }
+      return `${car.fuel_economy_per_km?.toFixed(2) || '0'} kWh/km`
     } else {
-      return `₵${car.fuel_economy_ghs_per_km?.toFixed(2) || '0'}/km`
+      if (car.fuel_economy_per_100km) {
+        return `${car.fuel_economy_per_100km} L/100km`
+      }
+      if (car.fuel_economy_ghs_per_km) {
+        return `₵${car.fuel_economy_ghs_per_km.toFixed(2)}/km`
+      }
+      return `${car.fuel_economy_per_km?.toFixed(2) || '0'} L/km`
     }
+  }
+
+  const handleImageError = (e) => {
+    e.target.src = EmptyCar
+    e.target.onerror = null // Prevent infinite loop
   }
 
   return (
@@ -76,12 +110,10 @@ const ComparisonCard = ({
             />
           ) : (
             <img
-              src={car.image}
-              alt={car.fullName}
+              src={car.image_url || EmptyCar}
+              alt={car.fullName || `${car.make} ${car.model}`}
               className="h-32 sm:h-40 lg:h-44 object-contain"
-              onError={(e) => {
-                e.target.src = EmptyCar
-              }}
+              onError={handleImageError}
             />
           )}
         </div>
@@ -99,13 +131,13 @@ const ComparisonCard = ({
           )}
 
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {isEmpty ? placeholder : car.fullName}
+            {isEmpty ? placeholder : (car.fullName || `${car.make} ${car.model}`)}
           </h2>
 
           <p className="text-gray-500 mt-1 text-sm sm:text-base">
             {isEmpty
               ? "Select a vehicle to compare"
-              : car.type === "EV"
+              : car.type === "ev"
               ? "Electric Vehicle (EV)"
               : "Internal Combustion Engine (ICE)"}
           </p>

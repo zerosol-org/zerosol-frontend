@@ -1,30 +1,25 @@
 // src/components/ComparisonSpecs.jsx
+import { useMemo } from 'react'
+
 const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
   const leftActive = Boolean(leftCar)
   const rightActive = Boolean(rightCar)
 
-  console.log("Rendering ComparisonSpecs with:")
-  console.log("Left Car:", leftCar)
-  console.log("Right Car:", rightCar)
-
-  // Helper functions to get values based on car type
+  // Helper functions to get values based on car type - moved inside component but memoized
   const getFuelEconomyValues = (car) => {
-    console.log("Calculating fuel economy values for car:", car)
     if (!car) return { per100km: '-', perYear: '-', annual: '-' }
     
-    if (car.type === 'EV') {
-      // EV: kWh consumption
+    if (car.type === 'ev') {
       return {
-        per100km: car.fuel_economy_per_100km ? `₵${car.fuel_economy_per_100km}` : '-',
-        perYear: car.annual_fuel_economy ? `₵${car.annual_fuel_economy}` : '-',
-        annual: car.annual_fuel_economy ? `₵${(car.annual_fuel_economy)}` : '-'
+        per100km: car.fuel_economy_per_100km ? `${car.fuel_economy_per_100km} kWh` : '-',
+        perYear: car.annual_fuel_economy ? `${car.annual_fuel_economy} kWh` : '-',
+        annual: car.annual_fuel_economy ? `₵${(car.annual_fuel_economy * 0.12).toFixed(2)}` : '-'
       }
     } else {
-      // ICE: Fuel consumption
       return {
-        per100km: car.fuel_economy_per_100km ? `₵${car.fuel_economy_per_100km}` : '-',
-        perYear: car.annual_fuel_economy ? `₵${car.annual_fuel_economy}` : '-',
-        annual: car.annual_fuel_economy ? `₵${car.annual_fuel_economy}` : '-'
+        per100km: car.fuel_economy_per_100km ? `${car.fuel_economy_per_100km} L` : '-',
+        perYear: car.annual_fuel_economy ? `${car.annual_fuel_economy} L` : '-',
+        annual: car.annual_fuel_economy ? `₵${(car.annual_fuel_economy * 15).toFixed(2)}` : '-'
       }
     }
   }
@@ -33,8 +28,8 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
     if (!car) return { per100km: '-', perYear: '-', annual: '-' }
 
     return {
-      per100km: car.tailpipe_emissions_per_100km ? `${car.tailpipe_emissions_per_100km} kgCO₂e` : '-',
-      perYear: car.annual_tailpipe_emissions ? `${(car.annual_tailpipe_emissions)} kgCO₂e` : '-',
+      per100km: car.tailpipe_emissions_per_100km ? `${car.tailpipe_emissions_per_100km} g` : '-',
+      perYear: car.annual_tailpipe_emissions ? `${(car.annual_tailpipe_emissions / 1000).toFixed(1)} kg` : '-',
       annual: car.annual_tailpipe_emissions ? `${car.annual_tailpipe_emissions} kgCO₂e` : '-'
     }
     
@@ -50,12 +45,13 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
     }
   }
 
-  const leftFuel = getFuelEconomyValues(leftCar)
-  const rightFuel = getFuelEconomyValues(rightCar)
-  const leftEmissions = getEmissionsValues(leftCar)
-  const rightEmissions = getEmissionsValues(rightCar)
-  const leftMaintenance = getMaintenanceValues(leftCar)
-  const rightMaintenance = getMaintenanceValues(rightCar)
+  // Memoize values to prevent unnecessary recalculations
+  const leftFuel = useMemo(() => getFuelEconomyValues(leftCar), [leftCar])
+  const rightFuel = useMemo(() => getFuelEconomyValues(rightCar), [rightCar])
+  const leftEmissions = useMemo(() => getEmissionsValues(leftCar), [leftCar])
+  const rightEmissions = useMemo(() => getEmissionsValues(rightCar), [rightCar])
+  const leftMaintenance = useMemo(() => getMaintenanceValues(leftCar), [leftCar])
+  const rightMaintenance = useMemo(() => getMaintenanceValues(rightCar), [rightCar])
 
   // Get TCO for the selected year
   const getTCO = (car, year) => {
@@ -102,8 +98,8 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
            rightCar?.seating_capacity ? `${rightCar.seating_capacity} seats` : '-'],
           
           ["Drivetrain", 
-           leftCar?.drive_type || leftCar?.type || '-',
-           rightCar?.drive_type || rightCar?.type || '-'],
+           leftCar?.drive_type || leftCar?.type === 'ev' ? 'Electric' : leftCar?.type || '-',
+           rightCar?.drive_type || rightCar?.type === 'ev' ? 'Electric' : rightCar?.type || '-'],
           
           ["Ground Clearance", 
            leftCar?.ground_clearance_mm || leftCar?.ground_clearance ? `${leftCar.ground_clearance_mm || leftCar.ground_clearance} mm` : '-',
@@ -113,7 +109,7 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
            leftCar?.apple_car_play ? 'Yes' : leftCar?.apple_car_play === false ? 'No' : '-',
            rightCar?.apple_car_play ? 'Yes' : rightCar?.apple_car_play === false ? 'No' : '-'],
           
-          ["Any OEM Tech Onboard", 
+          ["Android Auto", 
            leftCar?.android_auto ? 'Yes' : leftCar?.android_auto === false ? 'No' : '-',
            rightCar?.android_auto ? 'Yes' : rightCar?.android_auto === false ? 'No' : '-'],
         ]}
@@ -130,8 +126,8 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
            rightCar?.body_type || rightCar?.category || '-'],
           
           ["Drive Type", 
-           leftCar?.drive_type || leftCar?.type || '-',
-           rightCar?.drive_type || rightCar?.type || '-'],
+           leftCar?.drive_type || (leftCar?.type === 'ev' ? 'Electric' : '-'),
+           rightCar?.drive_type || (rightCar?.type === 'ev' ? 'Electric' : '-')],
           
           ["Cargo Capacity", 
            leftCar?.cargo_capacity_l || leftCar?.cargo_capacity ? `${leftCar.cargo_capacity_l || leftCar.cargo_capacity} L` : '-',
@@ -146,8 +142,8 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
         rightActive={rightActive}
         rows={[
           ["0–60 mph", 
-           leftCar?.acceleration ? `${leftCar.acceleration} seconds` : '-',
-           rightCar?.acceleration ? `${rightCar.acceleration} seconds` : '-'],
+           leftCar?.acceleration_0_60_mph ? `${leftCar.acceleration_0_60_mph} seconds` : '-',
+           rightCar?.acceleration_0_60_mph ? `${rightCar.acceleration_0_60_mph} seconds` : '-'],
           
           ["Top Speed", 
            leftCar?.top_speed_kmh || leftCar?.top_speed ? `${leftCar.top_speed_kmh || leftCar.top_speed} km/h` : '-',
@@ -158,12 +154,12 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
            rightCar?.horsepower ? `${rightCar.horsepower} hp` : '-'],
           
           ["Engine Type", 
-           leftCar?.engine_type || leftCar?.type || '-',
-           rightCar?.engine_type || rightCar?.type || '-'],
+           leftCar?.engine_type || (leftCar?.type === 'ev' ? 'Electric Motor' : '-'),
+           rightCar?.engine_type || (rightCar?.type === 'ev' ? 'Electric Motor' : '-')],
         ]}
       />
 
-      {/* COST SUMMARY (Optional) */}
+      {/* COST SUMMARY */}
       <SpecSection
         title={`Cost Summary (Year ${years})`}
         leftActive={leftActive}

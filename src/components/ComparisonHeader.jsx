@@ -1,4 +1,6 @@
+// src/components/ComparisonHeader.jsx
 import { Plus, X, Edit } from "lucide-react"
+import EmptyCar from "../assets/emptyCar.png"
 
 export default function ComparisonHeader({
   firstCar,
@@ -8,6 +10,20 @@ export default function ComparisonHeader({
   onRemoveFirst,
   onRemoveSecond,
 }) {
+  
+  const handleImageError = (e) => {
+    e.target.src = EmptyCar
+    e.target.onerror = null // Prevent infinite loop
+  }
+
+  const getVehicleName = (car) => {
+    return car.fullName || `${car.make} ${car.model}` || 'Vehicle'
+  }
+
+  const getVehicleImage = (car) => {
+    return car.image_url || car.image || EmptyCar
+  }
+
   return (
     <div className="w-full bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-6 py-10">
@@ -28,13 +44,16 @@ export default function ComparisonHeader({
           {firstCar ? (
             <div className="flex items-center gap-3 border border-dashed border-gray-300 rounded-lg p-3 h-16 bg-gray-50">
               <img 
-                src={firstCar.image || "/placeholder-car.jpg"} 
-                alt={firstCar.name} 
+                src={getVehicleImage(firstCar)}
+                alt={getVehicleName(firstCar)}
                 className="w-10 h-10 object-contain rounded"
+                onError={handleImageError}
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900">{firstCar.name}</div>
-                <div className="text-xs text-gray-500">2025 Model</div>
+                <div className="font-medium text-gray-900">{getVehicleName(firstCar)}</div>
+                <div className="text-xs text-gray-500">
+                  {firstCar.year || '2025'} Model
+                </div>
               </div>
               <button 
                 onClick={onAddFirst}
@@ -63,13 +82,16 @@ export default function ComparisonHeader({
           {secondCar ? (
             <div className="flex items-center gap-3 border border-dashed border-gray-300 rounded-lg p-3 h-16 bg-gray-50">
               <img 
-                src={secondCar.image || "/placeholder-car.jpg"} 
-                alt={secondCar.name} 
+                src={getVehicleImage(secondCar)}
+                alt={getVehicleName(secondCar)}
                 className="w-10 h-10 object-contain rounded"
+                onError={handleImageError}
               />
               <div className="flex-1">
-                <div className="font-medium text-gray-900">{secondCar.name}</div>
-                <div className="text-xs text-gray-500">2025 Model</div>
+                <div className="font-medium text-gray-900">{getVehicleName(secondCar)}</div>
+                <div className="text-xs text-gray-500">
+                  {secondCar.year || '2025'} Model
+                </div>
               </div>
               <button 
                 onClick={onAddSecond}
