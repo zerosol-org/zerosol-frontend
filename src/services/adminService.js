@@ -28,12 +28,10 @@ export const adminService = {
 
   // Get single EV vehicle
   async getEVVehicle(id) {
-    // Validate ID
     if (!id || id === 'undefined' || id === 'null' || id === 'new') {
       throw new Error('Invalid vehicle ID: ' + id)
     }
 
-    // Convert to number if it's a string number
     const numericId = parseInt(id)
     if (isNaN(numericId)) {
       throw new Error('ID must be a number')
@@ -65,9 +63,12 @@ export const adminService = {
   // Create EV vehicle
   async createEVVehicle(vehicleData) {
     try {
+      // Remove id and created_at if they exist
+      const { id, created_at, ...dataWithoutId } = vehicleData
+      
       // Clean the data - remove any undefined or empty strings
       const cleanData = Object.fromEntries(
-        Object.entries(vehicleData).filter(([_, v]) => 
+        Object.entries(dataWithoutId).filter(([_, v]) => 
           v !== '' && v !== undefined && v !== null
         )
       )
@@ -77,7 +78,10 @@ export const adminService = {
         .insert([cleanData])
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
       return data[0]
     } catch (error) {
       console.error('Error in createEVVehicle:', error)
@@ -87,7 +91,6 @@ export const adminService = {
 
   // Update EV vehicle
   async updateEVVehicle(id, vehicleData) {
-    // Validate ID
     if (!id || id === 'undefined' || id === 'null' || id === 'new') {
       throw new Error('Invalid vehicle ID: ' + id)
     }
@@ -98,9 +101,12 @@ export const adminService = {
     }
 
     try {
+      // Remove id and created_at from vehicleData if they exist
+      const { id: _, created_at, ...dataWithoutId } = vehicleData
+      
       // Clean the data - remove any undefined values
       const cleanData = Object.fromEntries(
-        Object.entries(vehicleData).filter(([_, v]) => v !== undefined)
+        Object.entries(dataWithoutId).filter(([_, v]) => v !== undefined)
       )
       
       const { data, error } = await supabase
@@ -109,7 +115,10 @@ export const adminService = {
         .eq('id', numericId)
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
       if (!data || data.length === 0) throw new Error('Vehicle not found')
       
       return data[0]
@@ -121,7 +130,6 @@ export const adminService = {
 
   // Delete EV vehicle
   async deleteEVVehicle(id) {
-    // Validate ID
     if (!id || id === 'undefined' || id === 'null' || id === 'new') {
       throw new Error('Invalid vehicle ID: ' + id)
     }
@@ -171,12 +179,10 @@ export const adminService = {
 
   // Get single ICE vehicle
   async getICEVehicle(id) {
-    // Validate ID
     if (!id || id === 'undefined' || id === 'null' || id === 'new') {
       throw new Error('Invalid vehicle ID: ' + id)
     }
 
-    // Convert to number if it's a string number
     const numericId = parseInt(id)
     if (isNaN(numericId)) {
       throw new Error('ID must be a number')
@@ -208,9 +214,12 @@ export const adminService = {
   // Create ICE vehicle
   async createICEVehicle(vehicleData) {
     try {
+      // Remove id and created_at if they exist
+      const { id, created_at, ...dataWithoutId } = vehicleData
+      
       // Clean the data - remove any undefined or empty strings
       const cleanData = Object.fromEntries(
-        Object.entries(vehicleData).filter(([_, v]) => 
+        Object.entries(dataWithoutId).filter(([_, v]) => 
           v !== '' && v !== undefined && v !== null
         )
       )
@@ -220,7 +229,10 @@ export const adminService = {
         .insert([cleanData])
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
       return data[0]
     } catch (error) {
       console.error('Error in createICEVehicle:', error)
@@ -230,7 +242,6 @@ export const adminService = {
 
   // Update ICE vehicle
   async updateICEVehicle(id, vehicleData) {
-    // Validate ID
     if (!id || id === 'undefined' || id === 'null' || id === 'new') {
       throw new Error('Invalid vehicle ID: ' + id)
     }
@@ -241,9 +252,12 @@ export const adminService = {
     }
 
     try {
+      // Remove id and created_at from vehicleData if they exist
+      const { id: _, created_at, ...dataWithoutId } = vehicleData
+      
       // Clean the data - remove any undefined values
       const cleanData = Object.fromEntries(
-        Object.entries(vehicleData).filter(([_, v]) => v !== undefined)
+        Object.entries(dataWithoutId).filter(([_, v]) => v !== undefined)
       )
       
       const { data, error } = await supabase
@@ -252,7 +266,10 @@ export const adminService = {
         .eq('id', numericId)
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
       if (!data || data.length === 0) throw new Error('Vehicle not found')
       
       return data[0]
@@ -264,7 +281,6 @@ export const adminService = {
 
   // Delete ICE vehicle
   async deleteICEVehicle(id) {
-    // Validate ID
     if (!id || id === 'undefined' || id === 'null' || id === 'new') {
       throw new Error('Invalid vehicle ID: ' + id)
     }
@@ -290,7 +306,6 @@ export const adminService = {
 
   // ==================== IMAGE MANAGEMENT ====================
   
-  // Upload vehicle image
   async uploadVehicleImage(file, make, model, type) {
     try {
       const fileName = `${type}_${make}_${model}_${Date.now()}.${file.name.split('.').pop()}`
@@ -302,7 +317,6 @@ export const adminService = {
       
       if (uploadError) throw uploadError
       
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('ev-images')
         .getPublicUrl(filePath)
@@ -314,7 +328,6 @@ export const adminService = {
     }
   },
 
-  // Delete vehicle image
   async deleteVehicleImage(imageUrl) {
     try {
       const path = imageUrl.split('/').pop()
@@ -334,7 +347,6 @@ export const adminService = {
   
   async getDashboardStats() {
     try {
-      // Get counts
       const [evCount, iceCount, evData, iceData] = await Promise.all([
         supabase.from('ev_vehicles').select('*', { count: 'exact', head: true }),
         supabase.from('ice_vehicles').select('*', { count: 'exact', head: true }),
@@ -345,11 +357,9 @@ export const adminService = {
       const evVehicles = evData.data || []
       const iceVehicles = iceData.data || []
       
-      // Basic counts
       const totalEV = evCount.count || 0
       const totalICE = iceCount.count || 0
       
-      // Unique makes
       const allMakes = [
         ...new Set([
           ...evVehicles.map(v => v.make).filter(Boolean),
@@ -357,7 +367,6 @@ export const adminService = {
         ])
       ]
       
-      // Category breakdown for EV
       const evCategoryCount = {}
       evVehicles.forEach(v => {
         if (v.category) {
@@ -365,7 +374,6 @@ export const adminService = {
         }
       })
       
-      // Category breakdown for ICE
       const iceCategoryCount = {}
       iceVehicles.forEach(v => {
         if (v.category) {
@@ -373,7 +381,6 @@ export const adminService = {
         }
       })
       
-      // Fuel type breakdown for ICE
       const fuelTypeCount = {}
       iceVehicles.forEach(v => {
         if (v.engine_type) {
@@ -381,7 +388,6 @@ export const adminService = {
         }
       })
       
-      // Average prices (filter out zeros)
       const validEVPrices = evVehicles.filter(v => v.price_usd && v.price_usd > 0)
       const validICEPrices = iceVehicles.filter(v => v.price_usd && v.price_usd > 0)
       
@@ -393,7 +399,6 @@ export const adminService = {
         ? validICEPrices.reduce((sum, v) => sum + v.price_usd, 0) / validICEPrices.length 
         : 0
       
-      // Average horsepower
       const validEVHP = evVehicles.filter(v => v.horsepower && v.horsepower > 0)
       const validICEHP = iceVehicles.filter(v => v.horsepower && v.horsepower > 0)
       
@@ -410,23 +415,18 @@ export const adminService = {
         totalICE,
         totalVehicles: totalEV + totalICE,
         uniqueMakes: allMakes.length,
-        
         evByCategory: Object.entries(evCategoryCount).map(([category, count]) => ({ category, count })),
         iceByCategory: Object.entries(iceCategoryCount).map(([category, count]) => ({ category, count })),
-        
         fuelTypes: Object.entries(fuelTypeCount).map(([type, count]) => ({ type, count })),
-        
         avgEVPrice: Math.round(avgEVPrice),
         avgICEPrice: Math.round(avgICEPrice),
         avgEVHP: Math.round(avgEVHP),
         avgICEHP: Math.round(avgICEHP),
-        
         topEVBrands: getTopBrands(evVehicles, 5),
         topICEBrands: getTopBrands(iceVehicles, 5)
       }
     } catch (error) {
       console.error('Error in getDashboardStats:', error)
-      // Return default values instead of throwing
       return {
         totalEV: 0,
         totalICE: 0,
@@ -447,18 +447,12 @@ export const adminService = {
 
   // ==================== UTILITY ====================
   
-  // Get all vehicles (for the data table)
   async getAllVehicles() {
     try {
-      console.log('Fetching all vehicles...')
-      
       const [evData, iceData] = await Promise.all([
         supabase.from('ev_vehicles').select('*'),
         supabase.from('ice_vehicles').select('*')
       ])
-      
-      console.log('EV data:', evData.data?.length || 0, 'records')
-      console.log('ICE data:', iceData.data?.length || 0, 'records')
       
       const evFormatted = (evData.data || []).map(v => ({
         ...v,
@@ -482,7 +476,6 @@ export const adminService = {
   }
 }
 
-// Helper function to get top brands
 function getTopBrands(vehicles, limit) {
   const brandCount = {}
   vehicles.forEach(v => {

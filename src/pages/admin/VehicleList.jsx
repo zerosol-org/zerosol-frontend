@@ -1,24 +1,18 @@
-// src/pages/Admin/AdminDashboard.jsx
+// src/pages/Admin/VehicleList.jsx
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { 
-  Battery, 
-  Fuel, 
-  AlertCircle,
-  PlusCircle,
-  Eye,
-  Edit,
-  Trash2
+  Eye, Edit, Trash2, Battery, Fuel, 
+  PlusCircle, AlertCircle, ArrowLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/adminService'
-import StatsCards from '../../components/admin/StatsCards'
+import AdminLayout from '../../components/admin/AdminLayout'
 import DataTable from '../../components/admin/DataTable'
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
-import AdminLayout from '../../components/admin/AdminLayout'
 
-export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('ev')
+export default function VehicleList() {
+  const { type } = useParams()
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -28,22 +22,6 @@ export default function AdminDashboard() {
   const [vehicleToDelete, setVehicleToDelete] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   
-  const [stats, setStats] = useState({
-    totalEV: 0,
-    totalICE: 0,
-    totalVehicles: 0,
-    uniqueMakes: 0,
-    evByCategory: [],
-    iceByCategory: [],
-    fuelTypes: [],
-    avgEVPrice: 0,
-    avgICEPrice: 0,
-    avgEVHP: 0,
-    avgICEHP: 0,
-    topEVBrands: [],
-    topICEBrands: []
-  })
-  
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
@@ -51,23 +29,9 @@ export default function AdminDashboard() {
   const itemsPerPage = 10
 
   useEffect(() => {
-    loadStats()
-  }, [])
-
-  useEffect(() => {
     loadVehicles()
     setCurrentPage(1)
-  }, [activeTab, searchTerm])
-
-  const loadStats = async () => {
-    try {
-      const data = await adminService.getDashboardStats()
-      setStats(data)
-    } catch (err) {
-      console.error('Error loading stats:', err)
-      toast.error('Failed to load dashboard statistics')
-    }
-  }
+  }, [type, searchTerm])
 
   const loadVehicles = async () => {
     setLoading(true)
@@ -75,7 +39,7 @@ export default function AdminDashboard() {
     try {
       const allVehicles = await adminService.getAllVehicles()
       
-      const filteredByType = allVehicles.filter(v => v.type === activeTab)
+      const filteredByType = allVehicles.filter(v => v.type === type)
       
       const searched = filteredByType.filter(v => {
         const searchLower = searchTerm.toLowerCase()
@@ -131,8 +95,6 @@ export default function AdminDashboard() {
       
       setTotalCount(prev => prev - 1)
       
-      await loadStats()
-      
       closeDeleteModal()
       
       if (vehicles.length === 1 && currentPage > 1) {
@@ -166,11 +128,6 @@ export default function AdminDashboard() {
       render: (row) => row.price_usd ? `$${Number(row.price_usd).toLocaleString()}` : '-'
     },
     { 
-      key: 'price_ghs', 
-      label: 'Price (GHS)',
-      render: (row) => row.price_ghs ? `₵${Number(row.price_ghs).toLocaleString()}` : '-'
-    },
-    { 
       key: 'fuel_economy_per_100km', 
       label: 'Fuel/100km',
       render: (row) => row.fuel_economy_per_100km ? `${row.fuel_economy_per_100km}` : '-'
@@ -179,16 +136,6 @@ export default function AdminDashboard() {
       key: 'horsepower', 
       label: 'HP',
       render: (row) => row.horsepower || '-'
-    },
-    { 
-      key: 'seating_capacity', 
-      label: 'Seats',
-      render: (row) => row.seating_capacity || '-'
-    },
-    { 
-      key: 'acceleration_0_60_mph', 
-      label: '0-60 mph',
-      render: (row) => row.acceleration_0_60_mph ? `${row.acceleration_0_60_mph}s` : '-'
     },
     {
       key: 'actions',
@@ -223,62 +170,50 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-sm text-gray-500">Manage your vehicle database</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/admin"
+              className="p-2 hover:bg-gray-100 rounded-lg"
+              title="Back to Dashboard"
+            >
+              <ArrowLeft size={20} />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                {type === 'ev' ? (
+                  <>
+                    <Battery className="text-green-600" size={24} />
+                    Electric Vehicles
+                  </>
+                ) : (
+                  <>
+                    <Fuel className="text-orange-600" size={24} />
+                    ICE Vehicles
+                  </>
+                )}
+              </h1>
+              <p className="text-sm text-gray-500">
+                Manage {type === 'ev' ? 'electric' : 'ICE'} vehicles
+              </p>
+            </div>
           </div>
           <Link
-            to={`/admin/vehicles/${activeTab}/new`}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            to={`/admin/vehicles/${type}/new`}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             <PlusCircle size={18} />
-            Add New Vehicle
+            Add New {type === 'ev' ? 'EV' : 'ICE'}
           </Link>
-        </div>
-
-        {/* Stats Cards */}
-        <StatsCards stats={stats} />
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="flex gap-4">
-            <button
-              onClick={() => setActiveTab('ev')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition ${
-                activeTab === 'ev'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Battery size={18} />
-                Electric Vehicles ({stats.totalEV})
-              </div>
-            </button>
-            <button
-              onClick={() => setActiveTab('ice')}
-              className={`px-4 py-2 font-medium text-sm border-b-2 transition ${
-                activeTab === 'ice'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Fuel size={18} />
-                ICE Vehicles ({stats.totalICE})
-              </div>
-            </button>
-          </nav>
         </div>
 
         {/* Search Bar */}
         <div className="mb-4">
           <input
             type="text"
-            placeholder={`Search ${activeTab === 'ev' ? 'EV' : 'ICE'} vehicles...`}
+            placeholder={`Search ${type === 'ev' ? 'EV' : 'ICE'} vehicles...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
