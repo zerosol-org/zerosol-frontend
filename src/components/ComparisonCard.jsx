@@ -1,17 +1,28 @@
+// src/components/ComparisonCard.jsx
 import { Wallet, LineChart, Fuel, Car } from "lucide-react"
 import EmptyCar from "../assets/emptyCar.png"
+
+const formatCurrency = (value) => {
+  if (!value) return 'GHS 0'
+  return `GHS ${Number(value).toLocaleString()}`
+}
+
+const formatEmissions = (value) => {
+  if (!value) return '0 kgCO₂e'
+  return `${Number(value).toFixed(2)} kgCO₂e`
+}
 
 const ComparisonCard = ({
   car,
   placeholder,
   onAdd,
-  variant = "primary", // "primary" = left | "secondary" = right
+  variant = "primary",
+  years = 3,
 }) => {
   const isEmpty = !car
   const isPrimary = variant === "primary"
   const active = !isEmpty
 
-  // Border colors per side + state
   const borderColor = isPrimary
     ? active
       ? "border-blue-500"
@@ -19,6 +30,28 @@ const ComparisonCard = ({
     : active
     ? "border-gray-500"
     : "border-gray-200"
+
+  // Get TCO and emissions based on selected years
+  const getTCO = () => {
+    if (!car?.tco) return '-'
+    const yearKey = `year${years}`
+    return formatCurrency(car.tco[yearKey])
+  }
+
+  const getEmissions = () => {
+    if (!car?.emissions) return '-'
+    const yearKey = `year${years}`
+    return formatEmissions(car.emissions[yearKey])
+  }
+
+  const getFuelEconomy = () => {
+    if (!car) return '-'
+    if (car.type === 'EV') {
+      return `₵${car.price_ghs?.toFixed(2) || '0'}/km`
+    } else {
+      return `₵${car.fuel_economy_ghs_per_km?.toFixed(2) || '0'}/km`
+    }
+  }
 
   return (
     <div
@@ -44,8 +77,11 @@ const ComparisonCard = ({
           ) : (
             <img
               src={car.image}
-              alt={car.name}
+              alt={car.fullName}
               className="h-32 sm:h-40 lg:h-44 object-contain"
+              onError={(e) => {
+                e.target.src = EmptyCar
+              }}
             />
           )}
         </div>
@@ -63,12 +99,12 @@ const ComparisonCard = ({
           )}
 
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {isEmpty ? placeholder : car.name}
+            {isEmpty ? placeholder : car.fullName}
           </h2>
 
           <p className="text-gray-500 mt-1 text-sm sm:text-base">
             {isEmpty
-              ? "Internal Combustion Engine (ICE)"
+              ? "Select a vehicle to compare"
               : car.type === "EV"
               ? "Electric Vehicle (EV)"
               : "Internal Combustion Engine (ICE)"}
@@ -93,22 +129,22 @@ const ComparisonCard = ({
       {/* METRICS */}
       <div className="flex flex-col gap-4 w-full lg:w-56">
         <Metric
-          title="Total Cost Ownership"
-          value={isEmpty ? "-" : "GHS 241,120"}
+          title={`Total Cost Ownership (Year ${years})`}
+          value={getTCO()}
           icon={Wallet}
           active={active}
           variant={variant}
         />
         <Metric
-          title="Tailpipe Emissions"
-          value={isEmpty ? "-" : "0.00 kgCO₂e"}
+          title={`Tailpipe Emissions (Year ${years})`}
+          value={getEmissions()}
           icon={LineChart}
           active={active}
           variant={variant}
         />
         <Metric
           title="Fuel Economy"
-          value={isEmpty ? "-" : "GHS 241"}
+          value={getFuelEconomy()}
           icon={Fuel}
           active={active}
           variant={variant}
@@ -144,13 +180,11 @@ const Metric = ({ title, value, icon: Icon, active, variant }) => {
   let bg, border, text, iconColor
 
   if (isPrimary) {
-    // LEFT SIDE (BLUE FAMILY)
     bg = active ? "bg-blue-100" : "bg-blue-50"
     border = active ? "border-blue-500" : "border-blue-200"
     text = active ? "text-blue-900" : "text-blue-400"
     iconColor = active ? "text-blue-700" : "text-blue-300"
   } else {
-    // RIGHT SIDE (GRAY FAMILY)
     bg = active ? "bg-gray-200" : "bg-gray-100"
     border = active ? "border-gray-600" : "border-gray-300"
     text = active ? "text-gray-900" : "text-gray-400"

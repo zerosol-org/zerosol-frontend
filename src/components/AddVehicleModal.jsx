@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Search, RotateCcw } from "lucide-react"
 import PopularPicks from "./PopularPicks"
+import { vehicleService } from "../services/vehicleService"
 
 export default function AddVehicleModal({
   open,
@@ -13,6 +14,51 @@ export default function AddVehicleModal({
   const [category, setCategory] = useState("All")
   const [fuel, setFuel] = useState("All")
   const [brand, setBrand] = useState("All")
+  const [brands, setBrands] = useState([])
+  const [categories, setCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch available brands and categories from Supabase
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      try {
+        setLoading(true)
+        const vehicles = await vehicleService.getAllVehicles()
+        
+        // Extract unique brands - handle case sensitivity and trim spaces
+        const uniqueBrands = [...new Set(
+          vehicles
+            .map(v => v.brand?.trim()) // Remove trailing spaces
+            .filter(Boolean) // Remove null/undefined
+            .map(b => b.charAt(0).toUpperCase() + b.slice(1).toLowerCase()) // Capitalize first letter
+        )].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })) // Case-insensitive sort
+        
+        setBrands(uniqueBrands)
+        
+        // Extract unique categories - handle case sensitivity
+        const uniqueCategories = [...new Set(
+          vehicles
+            .map(v => v.category?.trim())
+            .filter(Boolean)
+            .map(c => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase())
+        )].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+        
+        setCategories(uniqueCategories)
+        
+        console.log('Loaded brands:', uniqueBrands) // Debug log
+        console.log('Loaded categories:', uniqueCategories) // Debug log
+        
+      } catch (error) {
+        console.error("Error fetching filter options:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (open) {
+      fetchFilterOptions()
+    }
+  }, [open])
 
   const resetFilters = () => {
     setSearch("")
@@ -66,44 +112,47 @@ export default function AddVehicleModal({
 
         {/* Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {/* Category */}
+          {/* Category - Dynamically populated from Supabase */}
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm"
+            disabled={loading}
           >
             <option value="All">All categories</option>
-            <option value="Sedan">Sedan</option>
-            <option value="SUV">SUV</option>
-            <option value="Hatchback">Hatchback</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
           </select>
 
-          {/* Fuel */}
+          {/* Fuel - Updated to match database values */}
           <select
             value={fuel}
             onChange={(e) => setFuel(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm"
           >
             <option value="All">All fuel types</option>
-            <option value="Electric">Electric</option>
-            <option value="Hybrid">Hybrid</option>
+            <option value="Electric">Electric (EV)</option>
             <option value="Petrol">Petrol</option>
             <option value="Diesel">Diesel</option>
+            <option value="Hybrid">Hybrid</option>
           </select>
 
-          {/* Brand */}
+          {/* Brand - Dynamically populated from Supabase */}
           <select
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm"
+            disabled={loading}
           >
             <option value="All">All brands</option>
-            <option value="Tesla">Tesla</option>
-            <option value="BMW">BMW</option>
-            <option value="Audi">Audi</option>
-            <option value="Porsche">Porsche</option>
-            <option value="Toyota">Toyota</option>
-            <option value="Honda">Honda</option>
+            {brands.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
           </select>
 
           {/* Reset */}
@@ -116,14 +165,23 @@ export default function AddVehicleModal({
           </button>
         </div>
 
+        {/* Loading indicator */}
+        {loading && (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+        )}
+
         {/* Car List */}
-        <PopularPicks
-          search={search}
-          category={category}
-          fuel={fuel}
-          brand={brand}
-          onSelect={onSelectCar}
-        />
+        {!loading && (
+          <PopularPicks
+            search={search}
+            category={category}
+            fuel={fuel}
+            brand={brand}
+            onSelect={onSelectCar}
+          />
+        )}
       </div>
     </div>
   )

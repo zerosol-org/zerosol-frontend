@@ -1,3 +1,4 @@
+// src/components/ComparisonPage.jsx
 import { useState } from "react"
 import ComparisonHeader from "./ComparisonHeader"
 import ComparisonPeriod from "./ComparisonPeriod"
@@ -33,7 +34,6 @@ export default function ComparisonPage() {
     setActiveSlot(null)
   }
 
-  // Add remove handlers
   const handleRemoveFirst = () => setFirstCar(null)
   const handleRemoveSecond = () => setSecondCar(null)
 
@@ -56,6 +56,7 @@ export default function ComparisonPage() {
           placeholder="First Car"
           onAdd={() => openModalFor("first")}
           variant="primary"
+          years={years}
         />
 
         <ComparisonCard
@@ -63,14 +64,15 @@ export default function ComparisonPage() {
           placeholder="Second Car"
           onAdd={() => openModalFor("second")}
           variant="secondary"
+          years={years}
         />
       </main>
-       {/* 👇 THIS SECTION */}
-        <ComparisonSpecs
-          leftCar={firstCar}
-          rightCar={secondCar}
-          onReset={resetComparison}
-        />
+
+      <ComparisonSpecs
+        leftCar={firstCar}
+        rightCar={secondCar}
+        onReset={resetComparison}
+      />
 
       <AddVehicleModal
         open={modalOpen}
