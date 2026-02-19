@@ -54,7 +54,7 @@ export default function AdminLayout({ children }) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Close sidebar when route changes on mobile
+  // Close sidebar when route changes on mobile ONLY
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false)
@@ -87,6 +87,14 @@ export default function AdminLayout({ children }) {
   }
 
   const closeSidebar = () => {
+    // Only close on mobile
+    if (isMobile) {
+      setSidebarOpen(false)
+    }
+  }
+
+  const handleLinkClick = () => {
+    // Only close on mobile, keep open on desktop
     if (isMobile) {
       setSidebarOpen(false)
     }
@@ -222,11 +230,11 @@ export default function AdminLayout({ children }) {
       <aside
         className={`fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 z-50 transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${!isMobile ? 'lg:translate-x-0' : ''}`}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <Link to="/admin" className="flex items-center gap-2" onClick={closeSidebar}>
+          <Link to="/admin" className="flex items-center gap-2" onClick={handleLinkClick}>
             <div className="">
               <img src={Logo} alt="Logo" className="w-[5rem] h-auto" />
             </div>
@@ -250,7 +258,7 @@ export default function AdminLayout({ children }) {
               <li key={item.path}>
                 <Link
                   to={item.path}
-                  onClick={closeSidebar}
+                  onClick={handleLinkClick}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                     isActive(item.path)
                       ? 'bg-blue-50 text-blue-600'
