@@ -64,7 +64,7 @@ const ComparisonCard = ({
 
   const getFuelEconomy = () => {
     if (!car) return '-'
-    return `₵${car.fuel_economy_per_100km.toFixed(2)}/100km`
+    return `GHS ${car.fuel_economy_per_100km.toFixed(2)}/100km`
   }
 
   const handleImageError = (e) => {
@@ -133,7 +133,7 @@ const ComparisonCard = ({
                 e.stopPropagation()
                 onAdd()
               }}
-              className={`text-sm font-semibold mt-3 ${
+              className={`text-sm font-semibold mt-3 cursor-pointer hover:underline ${
                 isPrimary ? "text-blue-600" : "text-gray-600"
               }`}
             >
