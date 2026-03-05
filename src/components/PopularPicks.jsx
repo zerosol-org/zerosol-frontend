@@ -8,7 +8,7 @@ export default function PopularPicks({
   search,
   category,
   fuel,
-  make, // Changed from brand to make
+  make,
 }) {
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +35,7 @@ export default function PopularPicks({
       // Clean the data - trim spaces and standardize case for filtering
       const cleanedData = data.map(v => ({
         ...v,
-        make: v.make?.trim(), // Using make instead of brand
+        make: v.make?.trim(),
         category: v.category?.trim(),
         name: v.name?.trim(),
         fullName: v.fullName?.trim(),
@@ -183,8 +183,9 @@ export default function PopularPicks({
                 </span>
               </div>
 
-              <h3 className="text-sm font-semibold text-gray-900">
-                {car.name}
+              {/* Full vehicle name - make + model */}
+              <h3 className="text-base font-bold text-gray-900 mb-1">
+                {car.fullName || `${car.make} ${car.name}`}
               </h3>
 
               <p className="text-xs text-gray-500 mb-2 truncate">

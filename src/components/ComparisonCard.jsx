@@ -64,22 +64,7 @@ const ComparisonCard = ({
 
   const getFuelEconomy = () => {
     if (!car) return '-'
-    
-    // For EVs, show kWh, for ICE show L/100km or GHS/km
-    if (car.type === 'ev') {
-      if (car.fuel_economy_per_100km) {
-        return `${car.fuel_economy_per_100km} kWh/100km`
-      }
-      return `${car.fuel_economy_per_km?.toFixed(2) || '0'} kWh/km`
-    } else {
-      if (car.fuel_economy_per_100km) {
-        return `${car.fuel_economy_per_100km} L/100km`
-      }
-      if (car.fuel_economy_ghs_per_km) {
-        return `₵${car.fuel_economy_ghs_per_km.toFixed(2)}/km`
-      }
-      return `${car.fuel_economy_per_km?.toFixed(2) || '0'} L/km`
-    }
+    return `₵${car.fuel_economy_per_100km.toFixed(2)}/100km`
   }
 
   const handleImageError = (e) => {

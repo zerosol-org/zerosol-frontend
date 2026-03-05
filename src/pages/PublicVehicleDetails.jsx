@@ -50,6 +50,17 @@ export default function PublicVehicleDetails() {
     return `${symbol}${Number(value).toLocaleString()}`
   }
 
+  const formatFuelEconomy = (value) => {
+    if (!value) return '-'
+    return `₵${value}`
+    
+  }
+
+  const formatFuelEconomyCost = (value) => {
+    if (!value) return '-'
+    return `₵${Number(value).toFixed(2)}`
+  }
+
   const InfoSection = ({ title, icon: Icon, children }) => (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -164,9 +175,33 @@ export default function PublicVehicleDetails() {
         {/* Fuel Economy */}
         <div className="mb-6">
           <InfoSection title="Fuel Economy" icon={Fuel}>
-            <InfoRow label="Per km" value={vehicle.fuel_economy_per_km} />
-            <InfoRow label="Per 100km" value={vehicle.fuel_economy_per_100km} />
-            <InfoRow label="Annual" value={vehicle.annual_fuel_economy} />
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Per km</p>
+              <p className="text-base font-medium text-gray-900">
+                {formatFuelEconomy(vehicle.fuel_economy_per_km)}
+
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Per 100km</p>
+              <p className="text-base font-medium text-gray-900">
+               {formatFuelEconomy(vehicle.fuel_economy_per_100km)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Annual</p>
+              <p className="text-base font-medium text-gray-900">
+                {formatFuelEconomy(vehicle.annual_fuel_economy)}
+              </p>
+            </div>
+            {type === 'ice' && vehicle.fuel_economy_ghs_per_km && (
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Cost per km</p>
+                <p className="text-base font-medium text-gray-900">
+                  {formatFuelEconomyCost(vehicle.fuel_economy_ghs_per_km)}
+                </p>
+              </div>
+            )}
           </InfoSection>
         </div>
 
@@ -192,10 +227,25 @@ export default function PublicVehicleDetails() {
 
         {/* Maintenance */}
         <div className="mb-6">
-          <InfoSection title="Maintenance Costs (GHS)" icon={Wrench}>
-            <InfoRow label="Per km" value={vehicle.avg_maintenance_cost_per_km} />
-            <InfoRow label="Per 100km" value={vehicle.avg_maintenance_cost_per_100km} />
-            <InfoRow label="Annual" value={formatCurrency(vehicle.annual_maintenance_cost)} />
+          <InfoSection title="Maintenance Costs" icon={Wrench}>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Per km</p>
+              <p className="text-base font-medium text-gray-900">
+                {vehicle.avg_maintenance_cost_per_km ? `₵${vehicle.avg_maintenance_cost_per_km}` : '-'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Per 100km</p>
+              <p className="text-base font-medium text-gray-900">
+                {vehicle.avg_maintenance_cost_per_100km ? `₵${vehicle.avg_maintenance_cost_per_100km}` : '-'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Annual</p>
+              <p className="text-base font-medium text-gray-900">
+                {formatCurrency(vehicle.annual_maintenance_cost)}
+              </p>
+            </div>
           </InfoSection>
         </div>
 

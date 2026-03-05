@@ -51,9 +51,6 @@ export default function ComparisonHeader({
               />
               <div className="flex-1">
                 <div className="font-medium text-gray-900">{getVehicleName(firstCar)}</div>
-                <div className="text-xs text-gray-500">
-                  {firstCar.year || '2025'} Model
-                </div>
               </div>
               <button 
                 onClick={onAddFirst}
@@ -89,9 +86,6 @@ export default function ComparisonHeader({
               />
               <div className="flex-1">
                 <div className="font-medium text-gray-900">{getVehicleName(secondCar)}</div>
-                <div className="text-xs text-gray-500">
-                  {secondCar.year || '2025'} Model
-                </div>
               </div>
               <button 
                 onClick={onAddSecond}

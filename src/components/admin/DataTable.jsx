@@ -17,6 +17,10 @@ export default function DataTable({
   const [showRightShadow, setShowRightShadow] = useState(true)
   const scrollContainerRef = useRef(null)
 
+  // Separate actions column from other columns
+  const actionsColumn = columns.find(col => col.key === 'actions')
+  const dataColumns = columns.filter(col => col.key !== 'actions')
+
   // Check scroll position for shadows
   const checkScroll = () => {
     if (scrollContainerRef.current) {
@@ -104,7 +108,7 @@ export default function DataTable({
           <table className="w-full min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {columns.map((col) => (
+                {dataColumns.map((col) => (
                   <th
                     key={col.key}
                     className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap border-b border-gray-200"
@@ -119,15 +123,23 @@ export default function DataTable({
                     </div>
                   </th>
                 ))}
+                {/* Actions Header - Sticky */}
+                {actionsColumn && (
+                  <th className="sticky right-0 bg-gray-50 px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider border-b border-gray-200 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                    <div className="flex items-center gap-2">
+                      {actionsColumn.label}
+                    </div>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {sortedData.map((row, index) => (
                 <tr 
                   key={row.id || index} 
-                  className="hover:bg-blue-50/50 transition-colors duration-150"
+                  className="hover:bg-blue-50/50 transition-colors duration-150 group"
                 >
-                  {columns.map((col) => (
+                  {dataColumns.map((col) => (
                     <td key={col.key} className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                       {col.render ? col.render(row) : (
                         <span className={!row[col.key] ? 'text-gray-400' : 'text-gray-900'}>
@@ -136,12 +148,20 @@ export default function DataTable({
                       )}
                     </td>
                   ))}
+                  {/* Actions Cell - Sticky */}
+                  {actionsColumn && (
+                    <td className="sticky right-0 bg-white group-hover:bg-blue-50/50 px-6 py-4 text-sm text-gray-900 whitespace-nowrap shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                      <div className="flex items-center gap-3">
+                        {actionsColumn.render(row)}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {sortedData.length === 0 && (
                 <tr>
                   <td
-                    colSpan={columns.length}
+                    colSpan={dataColumns.length + (actionsColumn ? 1 : 0)}
                     className="px-6 py-12 text-center text-sm text-gray-500"
                   >
                     <div className="flex flex-col items-center gap-2">

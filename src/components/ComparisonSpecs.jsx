@@ -7,40 +7,34 @@ const ComparisonSpecs = ({ leftCar, rightCar, onReset, years = 3 }) => {
 
   // Helper functions to get values based on car type - moved inside component but memoized
   const getFuelEconomyValues = (car) => {
-    if (!car) return { per100km: '-', perYear: '-', annual: '-' }
+    if (!car) return { per1km: '-', per100km: '-', annual: '-' }
     
-    if (car.type === 'ev') {
-      return {
-        per100km: car.fuel_economy_per_100km ? `${car.fuel_economy_per_100km} kWh` : '-',
-        perYear: car.annual_fuel_economy ? `${car.annual_fuel_economy} kWh` : '-',
-        annual: car.annual_fuel_economy ? `₵${(car.annual_fuel_economy * 0.12).toFixed(2)}` : '-'
-      }
-    } else {
-      return {
-        per100km: car.fuel_economy_per_100km ? `${car.fuel_economy_per_100km} L` : '-',
-        perYear: car.annual_fuel_economy ? `${car.annual_fuel_economy} L` : '-',
-        annual: car.annual_fuel_economy ? `₵${(car.annual_fuel_economy * 15).toFixed(2)}` : '-'
-      }
+   
+    return {
+      per1km: car.fuel_economy_per_km ? `₵${car.fuel_economy_per_km}/km` : '-',
+      per100km: car.fuel_economy_per_100km ? `₵${car.fuel_economy_per_100km}/100km` : '-',
+      annual: car.annual_fuel_economy ? `₵${car.annual_fuel_economy}` : '-'
     }
+   
   }
 
   const getEmissionsValues = (car) => {
-    if (!car) return { per100km: '-', perYear: '-', annual: '-' }
+    if (!car) return { per1km: '-', per100km: '-', annual: '-' }
 
     return {
-      per100km: car.tailpipe_emissions_per_100km ? `${car.tailpipe_emissions_per_100km} g` : '-',
-      perYear: car.annual_tailpipe_emissions ? `${(car.annual_tailpipe_emissions / 1000).toFixed(1)} kg` : '-',
+      per1km: car.tailpipe_emissions_per_1km ? `${car.tailpipe_emissions_per_1km} kgCO₂e` : '-',
+      per100km: car.tailpipe_emissions_per_100km ? `${car.tailpipe_emissions_per_100km} kgCO₂e` : '-',
       annual: car.annual_tailpipe_emissions ? `${car.annual_tailpipe_emissions} kgCO₂e` : '-'
     }
     
   }
 
   const getMaintenanceValues = (car) => {
-    if (!car) return { per100km: '-', perYear: '-', annual: '-' }
+    if (!car) return { per1km: '-', per100km: '-', annual: '-' }
     
     return {
-      per100km: car.avg_maintenance_cost_per_100km ? `₵${car.avg_maintenance_cost_per_100km}` : '-',
-      perYear: car.annual_maintenance_cost ? `₵${car.annual_maintenance_cost.toLocaleString()}` : '-',
+      per1km: car.avg_maintenance_cost_per_1km ? `₵${car.avg_maintenance_cost_per_1km}/km` : '-',
+      per100km: car.annual_maintenance_cost_per_100km ? `₵${car.annual_maintenance_cost_per_100km}/100km` : '-',
       annual: car.annual_maintenance_cost ? `₵${car.annual_maintenance_cost.toLocaleString()}` : '-'
     }
   }
@@ -206,10 +200,10 @@ const SummaryRow = ({ label, leftValues, rightValues, leftActive, rightActive })
         {/* Column headers for left side */}
         <div className="grid grid-cols-3 gap-2 px-2 mb-1">
           <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider text-center">
-            Per 100km
+            Per 1km
           </div>
           <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider text-center">
-            Per Year
+            Per 100km
           </div>
           <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider text-center">
             Annual Cost
@@ -222,8 +216,8 @@ const SummaryRow = ({ label, leftValues, rightValues, leftActive, rightActive })
             ${leftActive ? "bg-blue-100" : "bg-blue-50"}
           `}
         >
+          <SummaryPill side="left" active={leftActive} value={leftValues?.per1km || '-'} />
           <SummaryPill side="left" active={leftActive} value={leftValues?.per100km || '-'} />
-          <SummaryPill side="left" active={leftActive} value={leftValues?.perYear || '-'} />
           <SummaryPill side="left" active={leftActive} value={leftValues?.annual || '-'} />
         </div>
       </div>
@@ -233,10 +227,10 @@ const SummaryRow = ({ label, leftValues, rightValues, leftActive, rightActive })
         {/* Column headers for right side */}
         <div className="grid grid-cols-3 gap-2 px-2 mb-1">
           <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wider text-center">
-            Per 100km
+            Per 1km
           </div>
           <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wider text-center">
-            Per Year
+            Per 100km
           </div>
           <div className="text-[10px] font-bold text-gray-700 uppercase tracking-wider text-center">
             Annual Cost
@@ -249,8 +243,8 @@ const SummaryRow = ({ label, leftValues, rightValues, leftActive, rightActive })
             ${rightActive ? "bg-gray-200" : "bg-gray-100"}
           `}
         >
+          <SummaryPill side="right" active={rightActive} value={rightValues?.per1km || '-'} />
           <SummaryPill side="right" active={rightActive} value={rightValues?.per100km || '-'} />
-          <SummaryPill side="right" active={rightActive} value={rightValues?.perYear || '-'} />
           <SummaryPill side="right" active={rightActive} value={rightValues?.annual || '-'} />
         </div>
       </div>

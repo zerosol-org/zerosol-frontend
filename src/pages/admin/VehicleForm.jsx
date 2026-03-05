@@ -1,13 +1,13 @@
 // src/pages/Admin/VehicleForm.jsx
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/adminService'
 import ImageUploader from '../../components/admin/ImageUploader'
 import AdminLayout from '../../components/admin/AdminLayout'
 
-// Move input components outside the main component
+// Text Input Component
 const TextInput = ({ label, name, value, onChange, required = false }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -24,6 +24,7 @@ const TextInput = ({ label, name, value, onChange, required = false }) => (
   </div>
 )
 
+// Number Input Component
 const NumberInput = ({ label, name, value, onChange, step = "0.01", required = false }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -40,26 +41,132 @@ const NumberInput = ({ label, name, value, onChange, step = "0.01", required = f
   </div>
 )
 
-const SelectInput = ({ label, name, value, onChange, options, required = false }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
+// Enhanced Select Input with Add New Category functionality
+const SelectInput = ({ label, name, value, onChange, options, required = false, onAddNew }) => (
+  <div className="space-y-2">
+    <label className="block text-sm font-medium text-gray-700">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
-    <select
-      name={name}
-      value={value ?? ''}
-      onChange={onChange}
-      required={required}
-      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">Select {label}</option>
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
+    
+    <div className="relative">
+      {/* Main Select Dropdown */}
+      <select
+        name={name}
+        value={value ?? ''}
+        onChange={onChange}
+        required={required}
+        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+          backgroundPosition: 'right 1rem center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: '1.5em 1.5em',
+          paddingRight: '4.5rem'
+        }}
+      >
+        <option value="">Select {label}</option>
+        {options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+
+      {/* Add New Category Button - Floating Badge */}
+      {onAddNew && (
+        <button
+          type="button"
+          onClick={onAddNew}
+          className="absolute right-12 top-1/2 -translate-y-1/2 px-2 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-medium rounded-md hover:from-green-600 hover:to-green-700 transition-all shadow-sm flex items-center gap-1 group"
+          title="Add a new category"
+        >
+          <Plus size={14} className="group-hover:rotate-90 transition-transform duration-200" />
+          <span className="hidden sm:inline">New</span>
+        </button>
+      )}
+    </div>
+
+    {/* Help Text */}
+    {onAddNew && (
+      <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-2 rounded-lg border border-gray-100">
+        <div className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm">✨</span>
+        </div>
+        <p>
+          <span className="font-medium text-gray-700">Don't see your category?</span>{' '}
+          Click the <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium"><Plus size={10} /> New</span> button to add it instantly
+        </p>
+      </div>
+    )}
   </div>
 )
 
+// Add Category Modal Component
+const AddCategoryModal = ({ isOpen, onClose, onAdd }) => {
+  const [newCategory, setNewCategory] = useState('')
+  const [adding, setAdding] = useState(false)
+
+  if (!isOpen) return null
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!newCategory.trim()) {
+      toast.error('Please enter a category name')
+      return
+    }
+
+    setAdding(true)
+    try {
+      await onAdd(newCategory.trim())
+      setNewCategory('')
+      onClose()
+    } catch (error) {
+      console.error('Error adding category:', error)
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Add New Category</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="Enter category name"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+            autoFocus
+          />
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={adding}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {adding ? 'Adding...' : 'Add Category'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// TextArea Input Component
 const TextAreaInput = ({ label, name, value, onChange, rows = 3 }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -75,6 +182,7 @@ const TextAreaInput = ({ label, name, value, onChange, rows = 3 }) => (
   </div>
 )
 
+// Section Component
 const Section = ({ title, icon: Icon, children }) => (
   <div className="bg-white rounded-xl border border-gray-200 p-6">
     <div className="flex items-center gap-2 mb-4">
@@ -100,6 +208,9 @@ export default function VehicleForm() {
   const [error, setError] = useState(null)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [loadingCategories, setLoadingCategories] = useState(false)
   
   // Form data state - note: 'id' and 'created_at' are NOT included
   const [formData, setFormData] = useState({
@@ -138,16 +249,41 @@ export default function VehicleForm() {
     tech_features: '',
   })
 
+  // Load all existing categories
+  const loadCategories = useCallback(async () => {
+    setLoadingCategories(true)
+    try {
+      const vehicles = await adminService.getAllVehicles()
+      const uniqueCategories = [...new Set(vehicles.map(v => v.category).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b))
+      
+      // Format for select input
+      const categoryOptions = uniqueCategories.map(cat => ({
+        value: cat,
+        label: cat
+      }))
+      
+      setCategories(categoryOptions)
+    } catch (error) {
+      console.error('Error loading categories:', error)
+      toast.error('Failed to load categories')
+    } finally {
+      setLoadingCategories(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (!isValidType) {
       setError(`Invalid vehicle type: ${type}. Must be 'ev' or 'ice'`)
       return
     }
 
+    loadCategories()
+
     if (isEditing) {
       loadVehicle()
     }
-  }, [id, type, isEditing, isValidType])
+  }, [id, type, isEditing, isValidType, loadCategories])
 
   const loadVehicle = async () => {
     setLoading(true)
@@ -208,6 +344,29 @@ export default function VehicleForm() {
     setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
   }, [])
+
+  const handleAddCategory = async (newCategory) => {
+    // Check if category already exists
+    const exists = categories.some(c => c.value.toLowerCase() === newCategory.toLowerCase())
+    
+    if (exists) {
+      toast.error('This category already exists')
+      return
+    }
+
+    // Add to categories list
+    const newCategoryOption = {
+      value: newCategory,
+      label: newCategory
+    }
+    
+    setCategories(prev => [...prev, newCategoryOption].sort((a, b) => a.label.localeCompare(b.label)))
+    
+    // Auto-select the new category
+    setFormData(prev => ({ ...prev, category: newCategory }))
+    
+    toast.success(`Category "${newCategory}" added successfully!`)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -281,18 +440,6 @@ export default function VehicleForm() {
       navigate('/admin')
     }
   }
-
-  // Memoize category options
-  const categoryOptions = useMemo(() => [
-    { value: "Compact Saloons & Hatchbacks", label: "Compact Saloons & Hatchbacks" },
-    { value: "Sedans & Saloons", label: "Sedans & Saloons" },
-    { value: "Compact SUVs & Crossovers", label: "Compact SUVs & Crossovers" },
-    { value: "Mid-size SUVs", label: "Mid-size SUVs" },
-    { value: "Family/3-row SUVs", label: "Family/3-row SUVs" },
-    { value: "Trucks", label: "Trucks" },
-    { value: "Pickups", label: "Pickups" },
-    { value: "Cargo Vans", label: "Cargo Vans" }
-  ], [])
 
   if (!isValidType) {
     return (
@@ -388,7 +535,8 @@ export default function VehicleForm() {
               name="category" 
               value={formData.category}
               onChange={handleChange}
-              options={categoryOptions}
+              options={categories}
+              onAddNew={() => setShowCategoryModal(true)}
               required
             />
             <NumberInput 
@@ -454,13 +602,13 @@ export default function VehicleForm() {
           {/* Emissions Section */}
           <Section title="Tailpipe Emissions">
             <NumberInput 
-              label="Per km (gCO₂e)" 
+              label="Per km (kgCO₂e)" 
               name="tailpipe_emissions_per_km" 
               value={formData.tailpipe_emissions_per_km}
               onChange={handleNumberChange}
             />
             <NumberInput 
-              label="Per 100km (gCO₂e)" 
+              label="Per 100km (kgCO₂e)" 
               name="tailpipe_emissions_per_100km" 
               value={formData.tailpipe_emissions_per_100km}
               onChange={handleNumberChange}
@@ -630,6 +778,13 @@ export default function VehicleForm() {
             </button>
           </div>
         </form>
+
+        {/* Add Category Modal */}
+        <AddCategoryModal
+          isOpen={showCategoryModal}
+          onClose={() => setShowCategoryModal(false)}
+          onAdd={handleAddCategory}
+        />
       </div>
     </AdminLayout>
   )
