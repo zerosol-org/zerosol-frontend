@@ -1,10 +1,9 @@
 // src/pages/Admin/VehicleForm.jsx
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Save, ArrowLeft, Plus, X } from 'lucide-react'
+import { Save, ArrowLeft, Plus, X, Camera, Upload, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { adminService } from '../../services/adminService'
-import ImageUploader from '../../components/admin/ImageUploader'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 // Text Input Component
@@ -98,6 +97,82 @@ const SelectInput = ({ label, name, value, onChange, options, required = false, 
     )}
   </div>
 )
+
+// Image Upload Component with Button Controls
+const ImageUploadButton = ({ imagePreview, onImageChange, onImageRemove }) => {
+  const fileInputRef = useRef(null)
+
+  const handleButtonClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      onImageChange(file)
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      {/* Image Preview */}
+      {imagePreview ? (
+        <div className="relative mb-4 group">
+          <img
+            src={imagePreview}
+            alt="Vehicle preview"
+            className="h-48 w-auto object-contain rounded-lg border border-gray-200"
+          />
+          {/* Image Actions Overlay */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={handleButtonClick}
+              className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition shadow-lg"
+              title="Change image"
+            >
+              <Upload size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={onImageRemove}
+              className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition shadow-lg"
+              title="Remove image"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4">
+          <div className="h-48 w-64 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+            <Camera size={40} className="text-gray-400 mb-2" />
+            <p className="text-sm text-gray-500">No image uploaded</p>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Upload Button */}
+      <button
+        type="button"
+        onClick={handleButtonClick}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+      >
+        <Upload size={16} />
+        {imagePreview ? 'Change Image' : 'Upload Image'}
+      </button>
+    </div>
+  )
+}
 
 // Add Category Modal Component
 const AddCategoryModal = ({ isOpen, onClose, onAdd }) => {
@@ -345,6 +420,12 @@ export default function VehicleForm() {
     setImagePreview(URL.createObjectURL(file))
   }, [])
 
+  const handleImageRemove = useCallback(() => {
+    setImageFile(null)
+    setImagePreview(null)
+    setFormData(prev => ({ ...prev, image_url: '' }))
+  }, [])
+
   const handleAddCategory = async (newCategory) => {
     // Check if category already exists
     const exists = categories.some(c => c.value.toLowerCase() === newCategory.toLowerCase())
@@ -501,15 +582,11 @@ export default function VehicleForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload Section */}
           <Section title="Vehicle Image">
-            <div className="col-span-3">
-              <ImageUploader
+            <div className="col-span-3 flex justify-center">
+              <ImageUploadButton
                 imagePreview={imagePreview}
                 onImageChange={handleImageChange}
-                onImageRemove={() => {
-                  setImageFile(null)
-                  setImagePreview(null)
-                  setFormData(prev => ({ ...prev, image_url: '' }))
-                }}
+                onImageRemove={handleImageRemove}
               />
             </div>
           </Section>
