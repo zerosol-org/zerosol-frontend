@@ -1,6 +1,39 @@
 // src/components/admin/DataTable.jsx
-import { ChevronLeft, ChevronRight, ArrowUpDown, Eye, Edit, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react'
 import { useState, useMemo, useRef, useEffect } from 'react'
+
+// Animation styles
+const styles = `
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+  }
+  
+  .animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out forwards;
+  }
+`;
 
 export default function DataTable({
   columns,
@@ -15,7 +48,30 @@ export default function DataTable({
   const [sortOrder, setSortOrder] = useState('desc')
   const [showLeftShadow, setShowLeftShadow] = useState(false)
   const [showRightShadow, setShowRightShadow] = useState(true)
+  const [animationDirection, setAnimationDirection] = useState(null) // 'forward' or 'backward'
+  const [animateRows, setAnimateRows] = useState(false)
   const scrollContainerRef = useRef(null)
+  const prevPageRef = useRef(currentPage)
+
+  // Trigger animation when page changes
+  useEffect(() => {
+    if (prevPageRef.current !== currentPage) {
+      // Determine direction
+      const direction = currentPage > prevPageRef.current ? 'forward' : 'backward'
+      setAnimationDirection(direction)
+      setAnimateRows(true)
+      
+      // Remove animation class after it completes
+      const timer = setTimeout(() => {
+        setAnimateRows(false)
+        setAnimationDirection(null)
+      }, 300) // Match this with CSS transition duration
+      
+      prevPageRef.current = currentPage
+      
+      return () => clearTimeout(timer)
+    }
+  }, [currentPage])
 
   // Separate actions column from other columns
   const actionsColumn = columns.find(col => col.key === 'actions')
@@ -63,12 +119,27 @@ export default function DataTable({
     setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')
   }
 
+  const handlePageChange = (newPage) => {
+    if (newPage !== currentPage) {
+      onPageChange(newPage)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
+  }
+
+  // Animation classes based on direction
+  const getRowAnimationClass = () => {
+    if (!animateRows) return ''
+    
+    return animationDirection === 'forward' 
+      ? 'animate-slide-in-right' 
+      : 'animate-slide-in-left'
   }
 
   return (
@@ -137,7 +208,10 @@ export default function DataTable({
               {sortedData.map((row, index) => (
                 <tr 
                   key={row.id || index} 
-                  className="hover:bg-blue-50/50 transition-colors duration-150 group"
+                  className={`hover:bg-blue-50/50 transition-colors duration-150 group ${getRowAnimationClass()}`}
+                  style={{ 
+                    animationDelay: `${index * 30}ms`,
+                  }}
                 >
                   {dataColumns.map((col) => (
                     <td key={col.key} className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
@@ -186,37 +260,66 @@ export default function DataTable({
           </div>
           <div className="flex items-center gap-2 order-1 sm:order-2">
             <button
-              onClick={() => onPageChange(currentPage - 1)}
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition ${
+              className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition transform active:scale-95 ${
                 currentPage === 1
                   ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-white shadow-sm'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-white shadow-sm hover:shadow'
               }`}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
               <span className="hidden sm:inline">Previous</span>
             </button>
-            <div className="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg border border-gray-200">
-              <span className="text-sm font-medium text-gray-700">{currentPage}</span>
-              <span className="text-sm text-gray-500">/</span>
-              <span className="text-sm text-gray-600">{totalPages}</span>
+            
+            {/* Page Numbers with Animation */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`min-w-[40px] h-10 rounded-lg text-sm font-medium transition-all transform hover:scale-105 ${
+                      currentPage === pageNum
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
             </div>
+            
             <button
-              onClick={() => onPageChange(currentPage + 1)}
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition ${
+              className={`flex items-center gap-1 px-4 py-2 rounded-lg border transition transform active:scale-95 ${
                 currentPage === totalPages
                   ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-white shadow-sm'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-white shadow-sm hover:shadow'
               }`}
             >
               <span className="hidden sm:inline">Next</span>
-              <ChevronRight size={16} />
+              <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
             </button>
           </div>
         </div>
       )}
+
+      {/* Add Animation Styles */}
+      <style>{styles}</style>
     </div>
   )
 }

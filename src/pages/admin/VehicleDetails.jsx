@@ -7,7 +7,7 @@ import {
   Ruler, Cpu, Clock, Tag, Hash, Layers
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { adminService } from '../../services/adminService'
+import { googleSheetsService as adminService } from '../../services/googleSheetService'
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
 import AdminLayout from '../../components/admin/AdminLayout'
 
@@ -195,7 +195,7 @@ export default function AdminVehicleDetails() {
           </div>
           
           <div className="flex gap-2 ml-auto">
-            <Link
+            {/* <Link
               to={`/admin/vehicles/${type}/${id}/edit`}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
@@ -208,7 +208,7 @@ export default function AdminVehicleDetails() {
             >
               <Trash2 size={18} />
               <span className="hidden sm:inline">Delete</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -299,18 +299,18 @@ export default function AdminVehicleDetails() {
           <InfoSection title="Maintenance Costs (GHS)" icon={Wrench}>
             <InfoRow label="Per km" value={vehicle.avg_maintenance_cost_per_km} />
             <InfoRow label="Per 100km" value={vehicle.avg_maintenance_cost_per_100km} />
-            <InfoRow label="Annual" value={formatCurrency(vehicle.annual_maintenance_cost)} />
+            <InfoRow label="Annual" value={vehicle.annual_maintenance_cost} />
           </InfoSection>
         </div>
 
         {/* Total Cost of Ownership */}
         <div className="mb-6">
           <InfoSection title="Total Cost of Ownership (GHS)" icon={DollarSign}>
-            <InfoRow label="Year 1" value={formatCurrency(vehicle.tco_yr1)} />
-            <InfoRow label="Year 2" value={formatCurrency(vehicle.tco_yr2)} />
-            <InfoRow label="Year 3" value={formatCurrency(vehicle.tco_yr3)} />
-            <InfoRow label="Year 4" value={formatCurrency(vehicle.tco_yr4)} />
-            <InfoRow label="Year 5" value={formatCurrency(vehicle.tco_yr5)} />
+            <InfoRow label="Year 1" value={vehicle.tco_yr1} />
+            <InfoRow label="Year 2" value={vehicle.tco_yr2} />
+            <InfoRow label="Year 3" value={vehicle.tco_yr3} />
+            <InfoRow label="Year 4" value={vehicle.tco_yr4} />
+            <InfoRow label="Year 5" value={vehicle.tco_yr5} />
           </InfoSection>
         </div>
 

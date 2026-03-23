@@ -6,7 +6,7 @@ import {
   PlusCircle, AlertCircle, ArrowLeft, Upload
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { adminService } from '../../services/adminService'
+import { googleSheetsService as adminService } from '../../services/googleSheetService'
 import AdminLayout from '../../components/admin/AdminLayout'
 import DataTable from '../../components/admin/DataTable'
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
@@ -168,7 +168,7 @@ export default function VehicleList() {
           >
             <Eye size={18} />
           </Link>
-          <Link
+          {/* <Link
             to={`/admin/vehicles/${row.type}/${row.displayId}/edit`}
             className="p-1 text-green-600 hover:bg-green-50 rounded"
             title="Edit Vehicle"
@@ -181,7 +181,7 @@ export default function VehicleList() {
             title="Delete Vehicle"
           >
             <Trash2 size={18} />
-          </button>
+          </button> */}
         </div>
       )
     }
@@ -220,7 +220,7 @@ export default function VehicleList() {
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <button
+            {/* <button
               onClick={() => setShowBulkUpload(true)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
             >
@@ -235,7 +235,7 @@ export default function VehicleList() {
               <PlusCircle size={18} />
               <span className="hidden sm:inline">Add New</span>
               <span className="sm:hidden">Add</span>
-            </Link>
+            </Link> */}
           </div>
         </div>
 

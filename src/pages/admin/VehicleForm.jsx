@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, ArrowLeft, Plus, X, Camera, Upload, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { adminService } from '../../services/adminService'
+import { googleSheetsService as adminService } from '../../services/googleSheetService'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 // Text Input Component

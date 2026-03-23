@@ -52,6 +52,7 @@ export default function ComparisonPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         <ComparisonCard
+          key={`first-${years}-${firstCar?.id || 'empty'}`}
           car={firstCar}
           placeholder="First Car"
           onAdd={() => openModalFor("first")}
@@ -60,6 +61,7 @@ export default function ComparisonPage() {
         />
 
         <ComparisonCard
+          key={`second-${years}-${secondCar?.id || 'empty'}`}
           car={secondCar}
           placeholder="Second Car"
           onAdd={() => openModalFor("second")}
@@ -69,9 +71,11 @@ export default function ComparisonPage() {
       </main>
 
       <ComparisonSpecs
+        key={`specs-${years}-${firstCar?.id || 'empty'}-${secondCar?.id || 'empty'}`}
         leftCar={firstCar}
         rightCar={secondCar}
         onReset={resetComparison}
+        years={years}
       />
 
       <AddVehicleModal

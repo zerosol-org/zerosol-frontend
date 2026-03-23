@@ -166,8 +166,8 @@ export default function PublicVehicleDetails() {
           </InfoSection>
 
           <InfoSection title="Pricing" icon={DollarSign}>
-            <InfoRow label="Price (USD)" value={formatCurrency(vehicle.price_usd, 'USD')} />
-            <InfoRow label="Price (GHS)" value={formatCurrency(vehicle.price_ghs, 'GHS')} />
+            <InfoRow label="Price (USD)" value={vehicle.price_usd} />
+            <InfoRow label="Price (GHS)" value={vehicle.price_ghs} />
             <InfoRow label="Exchange Rate" value={vehicle.exchange_rate} />
           </InfoSection>
         </div>
@@ -178,27 +178,27 @@ export default function PublicVehicleDetails() {
             <div>
               <p className="text-sm text-gray-500 mb-1">Per km</p>
               <p className="text-base font-medium text-gray-900">
-                {formatFuelEconomy(vehicle.fuel_economy_per_km)}
+                {vehicle.fuel_economy_per_km}
 
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Per 100km</p>
               <p className="text-base font-medium text-gray-900">
-               {formatFuelEconomy(vehicle.fuel_economy_per_100km)}
+               {vehicle.fuel_economy_per_100km}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Annual</p>
               <p className="text-base font-medium text-gray-900">
-                {formatFuelEconomy(vehicle.annual_fuel_economy)}
+                {vehicle.annual_fuel_economy}
               </p>
             </div>
             {type === 'ice' && vehicle.fuel_economy_ghs_per_km && (
               <div>
                 <p className="text-sm text-gray-500 mb-1">Cost per km</p>
                 <p className="text-base font-medium text-gray-900">
-                  {formatFuelEconomyCost(vehicle.fuel_economy_ghs_per_km)}
+                  {vehicle.fuel_economy_ghs_per_km}
                 </p>
               </div>
             )}
@@ -231,19 +231,19 @@ export default function PublicVehicleDetails() {
             <div>
               <p className="text-sm text-gray-500 mb-1">Per km</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.avg_maintenance_cost_per_km ? `₵${vehicle.avg_maintenance_cost_per_km}` : '-'}
+                {vehicle.avg_maintenance_cost_per_km ? `${vehicle.avg_maintenance_cost_per_km}` : '-'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Per 100km</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.avg_maintenance_cost_per_100km ? `₵${vehicle.avg_maintenance_cost_per_100km}` : '-'}
+                {vehicle.avg_maintenance_cost_per_100km ? `${vehicle.avg_maintenance_cost_per_100km}` : '-'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Annual</p>
               <p className="text-base font-medium text-gray-900">
-                {formatCurrency(vehicle.annual_maintenance_cost)}
+                {vehicle.annual_maintenance_cost}
               </p>
             </div>
           </InfoSection>
@@ -252,11 +252,11 @@ export default function PublicVehicleDetails() {
         {/* Total Cost of Ownership */}
         <div className="mb-6">
           <InfoSection title="Total Cost of Ownership (GHS)" icon={DollarSign}>
-            <InfoRow label="Year 1" value={formatCurrency(vehicle.tco_yr1)} />
-            <InfoRow label="Year 2" value={formatCurrency(vehicle.tco_yr2)} />
-            <InfoRow label="Year 3" value={formatCurrency(vehicle.tco_yr3)} />
-            <InfoRow label="Year 4" value={formatCurrency(vehicle.tco_yr4)} />
-            <InfoRow label="Year 5" value={formatCurrency(vehicle.tco_yr5)} />
+            <InfoRow label="Year 1" value={vehicle.tco_yr1} />
+            <InfoRow label="Year 2" value={vehicle.tco_yr2} />
+            <InfoRow label="Year 3" value={vehicle.tco_yr3} />
+            <InfoRow label="Year 4" value={vehicle.tco_yr4} />
+            <InfoRow label="Year 5" value={vehicle.tco_yr5} />
           </InfoSection>
         </div>
 

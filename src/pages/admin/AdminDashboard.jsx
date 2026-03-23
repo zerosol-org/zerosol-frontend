@@ -1,37 +1,27 @@
 // src/pages/Admin/AdminDashboard.jsx
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { 
   Battery, 
   Fuel, 
   AlertCircle,
-  PlusCircle,
   Eye,
-  Edit,
-  Trash2,
-  Upload
+  ExternalLink,
+  Database,
+  Shield
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { adminService } from '../../services/adminService'
+import { googleSheetsService as adminService } from '../../services/googleSheetService'
 import StatsCards from '../../components/admin/StatsCards'
 import DataTable from '../../components/admin/DataTable'
-import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal'
-import BulkUploadModal from '../../components/admin/BulkUploadModal'
 import AdminLayout from '../../components/admin/AdminLayout'
 
 export default function AdminDashboard() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('ev')
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  
-  // Delete modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-  const [vehicleToDelete, setVehicleToDelete] = useState(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  
-  // Bulk upload modal state
-  const [showBulkUpload, setShowBulkUpload] = useState(false)
   
   const [stats, setStats] = useState({
     totalEV: 0,
@@ -55,14 +45,41 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const itemsPerPage = 10
 
+  // Store all vehicles for filtering
+  const [allVehicles, setAllVehicles] = useState([])
+
+  // Google Sheet URL
+  const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Si9DqqHS_wpbKCdA1U9_KQxmpUG_-6kxjt-1dR9nd00/edit?pli=1&gid=0#gid=0'
+
+  // Check if user is trying to access admin features
   useEffect(() => {
-    loadStats()
-  }, [])
+    // Block any attempt to access admin creation/edit routes
+    const blockedPaths = ['/admin/vehicles/ev/new', '/admin/vehicles/ice/new']
+    const currentPath = window.location.pathname
+    
+    if (blockedPaths.includes(currentPath)) {
+      toast.error('Admin operations are now managed directly in Google Sheets')
+      navigate('/admin')
+      return
+    }
+  }, [navigate])
 
   useEffect(() => {
-    loadVehicles()
+    loadStats()
+    loadAllVehicles()
+  }, [])
+
+  // Reset to page 1 when tab or search changes
+  useEffect(() => {
     setCurrentPage(1)
   }, [activeTab, searchTerm])
+
+  // Apply filters and pagination whenever dependencies change
+  useEffect(() => {
+    if (allVehicles.length > 0) {
+      filterAndPaginateVehicles()
+    }
+  }, [allVehicles, activeTab, searchTerm, currentPage])
 
   const loadStats = async () => {
     try {
@@ -74,29 +91,12 @@ export default function AdminDashboard() {
     }
   }
 
-  const loadVehicles = async () => {
+  const loadAllVehicles = async () => {
     setLoading(true)
     setError(null)
     try {
-      const allVehicles = await adminService.getAllVehicles()
-      
-      const filteredByType = allVehicles.filter(v => v.type === activeTab)
-      
-      const searched = filteredByType.filter(v => {
-        const searchLower = searchTerm.toLowerCase()
-        return (
-          v.make?.toLowerCase().includes(searchLower) ||
-          v.model?.toLowerCase().includes(searchLower) ||
-          v.category?.toLowerCase().includes(searchLower)
-        )
-      })
-      
-      setTotalCount(searched.length)
-      
-      const start = (currentPage - 1) * itemsPerPage
-      const paginated = searched.slice(start, start + itemsPerPage)
-      
-      setVehicles(paginated)
+      const data = await adminService.getAllVehicles()
+      setAllVehicles(data)
     } catch (err) {
       setError(err.message)
       toast.error('Failed to load vehicles: ' + err.message)
@@ -105,55 +105,31 @@ export default function AdminDashboard() {
     }
   }
 
-  const openDeleteModal = (vehicle) => {
-    setVehicleToDelete(vehicle)
-    setDeleteModalOpen(true)
-  }
-
-  const closeDeleteModal = () => {
-    setDeleteModalOpen(false)
-    setVehicleToDelete(null)
-    setIsDeleting(false)
-  }
-
-  const handleDelete = async () => {
-    if (!vehicleToDelete) return
+  const filterAndPaginateVehicles = () => {
+    // Filter by type (EV/ICE)
+    const filteredByType = allVehicles.filter(v => v.type === activeTab)
     
-    setIsDeleting(true)
+    // Apply search filter
+    const searched = filteredByType.filter(v => {
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        v.make?.toLowerCase().includes(searchLower) ||
+        v.model?.toLowerCase().includes(searchLower) ||
+        v.category?.toLowerCase().includes(searchLower)
+      )
+    })
     
-    try {
-      if (vehicleToDelete.type === 'ev') {
-        await adminService.deleteEVVehicle(vehicleToDelete.displayId)
-      } else {
-        await adminService.deleteICEVehicle(vehicleToDelete.displayId)
-      }
-      
-      toast.success(`${vehicleToDelete.make} ${vehicleToDelete.model} deleted successfully!`)
-      
-      setVehicles(prev => prev.filter(v => 
-        !(v.type === vehicleToDelete.type && v.displayId === vehicleToDelete.displayId)
-      ))
-      
-      setTotalCount(prev => prev - 1)
-      
-      await loadStats()
-      
-      closeDeleteModal()
-      
-      if (vehicles.length === 1 && currentPage > 1) {
-        setCurrentPage(prev => prev - 1)
-      }
-      
-    } catch (err) {
-      toast.error(`Failed to delete: ${err.message}`)
-      setIsDeleting(false)
-    }
+    setTotalCount(searched.length)
+    
+    // Calculate pagination
+    const start = (currentPage - 1) * itemsPerPage
+    const paginated = searched.slice(start, start + itemsPerPage)
+    
+    setVehicles(paginated)
   }
 
-  const handleBulkUploadSuccess = () => {
-    loadVehicles()
-    loadStats()
-    setShowBulkUpload(false)
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage)
   }
 
   const columns = [
@@ -208,25 +184,11 @@ export default function AdminDashboard() {
         <div className="flex gap-2">
           <Link
             to={`/admin/vehicles/${row.type}/${row.displayId}`}
-            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+            className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="View Details"
           >
             <Eye size={18} />
           </Link>
-          <Link
-            to={`/admin/vehicles/${row.type}/${row.displayId}/edit`}
-            className="p-1 text-green-600 hover:bg-green-50 rounded"
-            title="Edit Vehicle"
-          >
-            <Edit size={18} />
-          </Link>
-          <button
-            onClick={() => openDeleteModal(row)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded"
-            title="Delete Vehicle"
-          >
-            <Trash2 size={18} />
-          </button>
         </div>
       )
     }
@@ -235,37 +197,74 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-sm text-gray-500">Manage your vehicle database</p>
+        {/* Google Sheets Management Banner */}
+        <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Database size={24} className="text-blue-700" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                  <Shield size={18} className="text-blue-600" />
+                  Google Sheets Management
+                </h2>
+                <p className="text-gray-600 text-sm mb-3">
+                  All vehicle data is now managed directly in Google Sheets. Add, edit, or delete vehicles 
+                  by opening the spreadsheet below. Changes will reflect automatically in the app.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                  <a
+                    href={GOOGLE_SHEET_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                  >
+                    <ExternalLink size={16} />
+                    Open Google Sheet
+                    <span className="text-xs opacity-75 ml-1">↗</span>
+                  </a>
+                  <div className="text-xs text-gray-500 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Live connection • Changes reflect instantly
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setShowBulkUpload(true)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              <Upload size={18} />
-              <span className="hidden sm:inline">Bulk Upload</span>
-              <span className="sm:hidden">Bulk</span>
-            </button>
-            <Link
-              to={`/admin/vehicles/${activeTab}/new`}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <PlusCircle size={18} />
-              <span className="hidden sm:inline">Add New</span>
-              <span className="sm:hidden">Add</span>
-            </Link>
+          
+          {/* Info Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-blue-200 bg-white/50 p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.totalEV + stats.totalICE}</p>
+              <p className="text-xs text-gray-500">Total Vehicles</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.totalEV}</p>
+              <p className="text-xs text-gray-500">Electric Vehicles</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.totalICE}</p>
+              <p className="text-xs text-gray-500">ICE Vehicles</p>
+            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <StatsCards stats={stats} />
+        {/* Stats Cards - Read Only */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Statistics (Read Only)
+            </h3>
+            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+              Auto-refreshing
+            </span>
+          </div>
+          <StatsCards stats={stats} />
+        </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
+        <div className="border-b border-gray-200 mt-6">
           <nav className="flex gap-4">
             <button
               onClick={() => setActiveTab('ev')}
@@ -297,7 +296,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-4">
+        <div className="mb-4 mt-4">
           <input
             type="text"
             placeholder={`Search ${activeTab === 'ev' ? 'EV' : 'ICE'} vehicles...`}
@@ -315,34 +314,27 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Data Table */}
-        <DataTable
-          columns={columns}
-          data={vehicles}
-          loading={loading}
-          currentPage={currentPage}
-          totalPages={Math.ceil(totalCount / itemsPerPage)}
-          onPageChange={setCurrentPage}
-          totalItems={totalCount}
-          itemsPerPage={itemsPerPage}
-        />
-
-        {/* Delete Confirmation Modal */}
-        <DeleteConfirmationModal
-          isOpen={deleteModalOpen}
-          onClose={closeDeleteModal}
-          onConfirm={handleDelete}
-          vehicleName={vehicleToDelete ? `${vehicleToDelete.make} ${vehicleToDelete.model}` : ''}
-          isDeleting={isDeleting}
-        />
-
-        {/* Bulk Upload Modal */}
-        <BulkUploadModal
-          isOpen={showBulkUpload}
-          onClose={() => setShowBulkUpload(false)}
-          onSuccess={handleBulkUploadSuccess}
-          vehicleType={activeTab}
-        />
+        {/* Data Table - Read Only */}
+        <div className="relative">
+          <DataTable
+            columns={columns}
+            data={vehicles}
+            loading={loading}
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalCount / itemsPerPage)}
+            onPageChange={handlePageChange}
+            totalItems={totalCount}
+            itemsPerPage={itemsPerPage}
+          />
+          
+          {/* Read Only Overlay Hint */}
+          <div className="mt-3 text-right">
+            <span className="text-xs text-gray-400 flex items-center justify-end gap-1">
+              <Eye size={12} />
+              View only - Manage data in Google Sheets
+            </span>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   )

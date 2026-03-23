@@ -1,17 +1,7 @@
 // src/components/ComparisonCard.jsx
 import { Wallet, LineChart, Fuel, Car } from "lucide-react"
 import EmptyCar from "../assets/emptyCar.png"
-
-const formatCurrency = (value) => {
-  if (!value) return 'GHS 0'
-  return `GHS ${Number(value).toLocaleString()}`
-}
-
-const formatEmissions = (value) => {
-  console.log('Formatting emissions value:', value)
-  if (value === null || value === undefined || value === '') return '0 kgCO₂e'
-  return `${Number(value)} kgCO₂e`
-}
+import { useMemo } from 'react'
 
 const ComparisonCard = ({
   car,
@@ -32,44 +22,121 @@ const ComparisonCard = ({
     ? "border-gray-500"
     : "border-gray-200"
 
+  // Helper to format currency
+  const formatCurrency = (value) => {
+    if (!value && value !== 0) return 'GHS 0'
+    const cleanValue = typeof value === 'string' 
+      ? value.replace(/[₵$,]/g, '').replace(/,/g, '')
+      : value
+    const num = typeof cleanValue === 'number' ? cleanValue : parseFloat(cleanValue)
+    if (isNaN(num)) return 'GHS 0'
+    return `GHS ${num.toLocaleString()}`
+  }
+
+  // Helper to format emissions
+  const formatEmissions = (value) => {
+    if (!value && value !== 0) return '0 kgCO₂e'
+    const cleanValue = typeof value === 'string' 
+      ? value.replace(/[^\d.-]/g, '')
+      : value
+    const num = typeof cleanValue === 'number' ? cleanValue : parseFloat(cleanValue)
+    if (isNaN(num)) return '0 kgCO₂e'
+    return `${num.toLocaleString()} kgCO₂e`
+  }
+
   // Get TCO based on selected years
-  const getTCO = () => {
+  const tcoValue = useMemo(() => {
     if (!car) return '-'
     
-    // Try to get from tco object first, then direct fields
+    // Year 0: Show dash
+    if (years === 0) return '-'
+    
+    // YEARS 1-5: Get TCO data
+    let tcoVal = null
+    
     if (car.tco) {
       const yearKey = `year${years}`
-      return formatCurrency(car.tco[yearKey])
+      tcoVal = car.tco[yearKey]
+    }
+    if (!tcoVal) {
+      const tcoField = `tco_yr${years}`
+      tcoVal = car[tcoField]
+    }
+    if (!tcoVal) {
+      const sheetField = `TCO Yr${years}`
+      tcoVal = car[sheetField]
     }
     
-    // Fallback to direct fields
-    const tcoField = `tco_yr${years}`
-    return formatCurrency(car[tcoField])
-  }
+    if (tcoVal) {
+      return formatCurrency(tcoVal)
+    }
+    
+    return 'GHS 0'
+  }, [car, years])
 
   // Get emissions based on selected years
-  const getEmissions = () => {
+  const emissionsValue = useMemo(() => {
     if (!car) return '-'
     
-    // Try to get from emissions object first
+    // Year 0: Show dash
+    if (years === 0) return '-'
+    
+    let emissionsVal = null
+    
     if (car.emissions) {
       const yearKey = `year${years}`
-      return formatEmissions(car.emissions[yearKey])
+      emissionsVal = car.emissions[yearKey]
+    }
+    if (!emissionsVal) {
+      const emissionsField = `tailpipe_emissions_yr${years}`
+      emissionsVal = car[emissionsField]
+    }
+    if (!emissionsVal) {
+      const sheetField = `Tailpipe Emissions Yr${years}`
+      emissionsVal = car[sheetField]
     }
     
-    // Fallback to direct fields
-    const emissionsField = `tailpipe_emissions_yr${years}`
-    return formatEmissions(car[emissionsField])
-  }
+    if (emissionsVal) {
+      return formatEmissions(emissionsVal)
+    }
+    
+    return '0 kgCO₂e'
+  }, [car, years])
 
-  const getFuelEconomy = () => {
+  // Get fuel economy
+  const fuelEconomy = useMemo(() => {
     if (!car) return '-'
-    return `GHS ${car.fuel_economy_per_100km.toFixed(2)}/100km`
-  }
+    
+    // Year 0: Show dash
+    if (years === 0) return '-'
+    
+    let value = null
+    
+    if (car.fuel_economy_per_100km) {
+      value = car.fuel_economy_per_100km
+    } else if (car['Fuel Economy (/100 km)']) {
+      value = car['Fuel Economy (/100 km)']
+    } else if (car.fuel_economy_per_km) {
+      value = parseFloat(car.fuel_economy_per_km) * 100
+    }
+    
+    if (value) {
+      const numValue = parseFloat(value)
+      if (!isNaN(numValue)) {
+        return `GHS ${numValue.toFixed(2)}/100km`
+      }
+      if (typeof value === 'string' && value.includes('GHS')) {
+        return value
+      }
+      return `${value}/100km`
+    }
+    
+    return 'GHS 0/100km'
+  }, [car, years])
 
   const handleImageError = (e) => {
     e.target.src = EmptyCar
-    e.target.onerror = null // Prevent infinite loop
+    e.target.onerror = null
   }
 
   return (
@@ -145,23 +212,24 @@ const ComparisonCard = ({
 
       {/* METRICS */}
       <div className="flex flex-col gap-4 w-full lg:w-56">
+        {/* For Year 0 - Show all metrics with dashes */}
         <Metric
-          title={`Total Cost Ownership (Year ${years})`}
-          value={getTCO()}
+          title={years === 0 ? "Total Cost Ownership" : `Total Cost Ownership (Year ${years})`}
+          value={tcoValue}
           icon={Wallet}
           active={active}
           variant={variant}
         />
         <Metric
-          title={`Tailpipe Emissions (Year ${years})`}
-          value={getEmissions()}
+          title={years === 0 ? "Tailpipe Emissions" : `Tailpipe Emissions (Year ${years})`}
+          value={emissionsValue}
           icon={LineChart}
           active={active}
           variant={variant}
         />
         <Metric
           title="Fuel Economy"
-          value={getFuelEconomy()}
+          value={fuelEconomy}
           icon={Fuel}
           active={active}
           variant={variant}
