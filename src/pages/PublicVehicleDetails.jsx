@@ -25,6 +25,12 @@ export default function PublicVehicleDetails() {
     setLoading(true)
     try {
       const data = await vehicleService.getVehicleById(id, type)
+      console.log('Vehicle loaded:', {
+        make: data.make,
+        model: data.model,
+        top_speed: data.top_speed_kmh || data.top_speed,
+        acceleration: data.acceleration_0_60_mph
+      })
       setVehicle(data)
     } catch (error) {
       console.error('Error loading vehicle:', error)
@@ -48,17 +54,6 @@ export default function PublicVehicleDetails() {
     if (!value) return '-'
     const symbol = currency === 'USD' ? '$' : '₵'
     return `${symbol}${Number(value).toLocaleString()}`
-  }
-
-  const formatFuelEconomy = (value) => {
-    if (!value) return '-'
-    return `₵${value}`
-    
-  }
-
-  const formatFuelEconomyCost = (value) => {
-    if (!value) return '-'
-    return `₵${Number(value).toFixed(2)}`
   }
 
   const InfoSection = ({ title, icon: Icon, children }) => (
@@ -166,8 +161,8 @@ export default function PublicVehicleDetails() {
           </InfoSection>
 
           <InfoSection title="Pricing" icon={DollarSign}>
-            <InfoRow label="Price (USD)" value={vehicle.price_usd} />
-            <InfoRow label="Price (GHS)" value={vehicle.price_ghs} />
+            <InfoRow label="Price (USD)" value={vehicle.price_usd ? `$${Number(vehicle.price_usd).toLocaleString()}` : '-'} />
+            <InfoRow label="Price (GHS)" value={vehicle.price_ghs ? `₵${Number(vehicle.price_ghs).toLocaleString()}` : '-'} />
             <InfoRow label="Exchange Rate" value={vehicle.exchange_rate} />
           </InfoSection>
         </div>
@@ -178,25 +173,24 @@ export default function PublicVehicleDetails() {
             <div>
               <p className="text-sm text-gray-500 mb-1">Per km</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.fuel_economy_per_km}
-
+                {vehicle.fuel_economy_per_km || '-'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Per 100km</p>
               <p className="text-base font-medium text-gray-900">
-               {vehicle.fuel_economy_per_100km}
+                {vehicle.fuel_economy_per_100km || '-'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Annual</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.annual_fuel_economy}
+                {vehicle.annual_fuel_economy || '-'}
               </p>
             </div>
             {type === 'ice' && vehicle.fuel_economy_ghs_per_km && (
               <div>
-                <p className="text-sm text-gray-500 mb-1">Cost per km</p>
+                <p className="text-sm text-gray-500 mb-1">Cost per km (GHS)</p>
                 <p className="text-base font-medium text-gray-900">
                   {vehicle.fuel_economy_ghs_per_km}
                 </p>
@@ -231,19 +225,19 @@ export default function PublicVehicleDetails() {
             <div>
               <p className="text-sm text-gray-500 mb-1">Per km</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.avg_maintenance_cost_per_km ? `${vehicle.avg_maintenance_cost_per_km}` : '-'}
+                {vehicle.avg_maintenance_cost_per_km ? `₵${vehicle.avg_maintenance_cost_per_km}` : '-'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Per 100km</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.avg_maintenance_cost_per_100km ? `${vehicle.avg_maintenance_cost_per_100km}` : '-'}
+                {vehicle.avg_maintenance_cost_per_100km ? `₵${vehicle.avg_maintenance_cost_per_100km}` : '-'}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Annual</p>
               <p className="text-base font-medium text-gray-900">
-                {vehicle.annual_maintenance_cost}
+                {vehicle.annual_maintenance_cost ? `₵${Number(vehicle.annual_maintenance_cost).toLocaleString()}` : '-'}
               </p>
             </div>
           </InfoSection>
@@ -252,19 +246,19 @@ export default function PublicVehicleDetails() {
         {/* Total Cost of Ownership */}
         <div className="mb-6">
           <InfoSection title="Total Cost of Ownership (GHS)" icon={DollarSign}>
-            <InfoRow label="Year 1" value={vehicle.tco_yr1} />
-            <InfoRow label="Year 2" value={vehicle.tco_yr2} />
-            <InfoRow label="Year 3" value={vehicle.tco_yr3} />
-            <InfoRow label="Year 4" value={vehicle.tco_yr4} />
-            <InfoRow label="Year 5" value={vehicle.tco_yr5} />
+            <InfoRow label="Year 1" value={vehicle.tco_yr1 ? `₵${Number(vehicle.tco_yr1).toLocaleString()}` : '-'} />
+            <InfoRow label="Year 2" value={vehicle.tco_yr2 ? `₵${Number(vehicle.tco_yr2).toLocaleString()}` : '-'} />
+            <InfoRow label="Year 3" value={vehicle.tco_yr3 ? `₵${Number(vehicle.tco_yr3).toLocaleString()}` : '-'} />
+            <InfoRow label="Year 4" value={vehicle.tco_yr4 ? `₵${Number(vehicle.tco_yr4).toLocaleString()}` : '-'} />
+            <InfoRow label="Year 5" value={vehicle.tco_yr5 ? `₵${Number(vehicle.tco_yr5).toLocaleString()}` : '-'} />
           </InfoSection>
         </div>
 
-        {/* Performance */}
+        {/* Performance - FIXED: Now properly displays top speed */}
         <div className="mb-6">
           <InfoSection title="Performance" icon={Gauge}>
             <InfoRow label="0-60 mph (seconds)" value={vehicle.acceleration_0_60_mph} />
-            <InfoRow label="Top Speed (km/h)" value={vehicle.top_speed_kmh} />
+            <InfoRow label="Top Speed" value={vehicle.top_speed_kmh || vehicle.top_speed || '-'} />
           </InfoSection>
         </div>
 
@@ -275,6 +269,21 @@ export default function PublicVehicleDetails() {
             <InfoRow label="Cargo Capacity (L)" value={vehicle.cargo_capacity_l} />
           </InfoSection>
         </div>
+
+        {/* ICE Specific Fields */}
+        {type === 'ice' && (
+          <div className="mb-6">
+            <InfoSection title="ICE Specific Details" icon={Car}>
+              <InfoRow label="Body Type" value={vehicle.body_type} />
+              <InfoRow label="Drive Type" value={vehicle.drive_type} />
+              <InfoRow label="Engine Type" value={vehicle.engine_type} />
+              <InfoRow label="Ground Clearance" value={vehicle.ground_clearance} />
+              <InfoRow label="Cargo Capacity" value={vehicle.cargo_capacity} />
+              <InfoRow label="Apple CarPlay" value={vehicle.apple_car_play} />
+              <InfoRow label="Android Auto" value={vehicle.android_auto} />
+            </InfoSection>
+          </div>
+        )}
 
         {/* Features */}
         {vehicle.tech_features && (

@@ -8,7 +8,8 @@ import {
   Eye,
   ExternalLink,
   Database,
-  Shield
+  Shield,
+  Loader
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { googleSheetsService as adminService } from '../../services/googleSheetService'
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('ev')
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(true)
   const [error, setError] = useState(null)
   
   const [stats, setStats] = useState({
@@ -82,12 +84,15 @@ export default function AdminDashboard() {
   }, [allVehicles, activeTab, searchTerm, currentPage])
 
   const loadStats = async () => {
+    setStatsLoading(true)
     try {
       const data = await adminService.getDashboardStats()
       setStats(data)
     } catch (err) {
       console.error('Error loading stats:', err)
       toast.error('Failed to load dashboard statistics')
+    } finally {
+      setStatsLoading(false)
     }
   }
 
@@ -232,35 +237,26 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          
-          {/* Info Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-blue-200 bg-white/50 p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{stats.totalEV + stats.totalICE}</p>
-              <p className="text-xs text-gray-500">Total Vehicles</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{stats.totalEV}</p>
-              <p className="text-xs text-gray-500">Electric Vehicles</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{stats.totalICE}</p>
-              <p className="text-xs text-gray-500">ICE Vehicles</p>
-            </div>
-          </div>
         </div>
 
-        {/* Stats Cards - Read Only */}
+        {/* Stats Cards - Read Only with Loading State */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
               Statistics (Read Only)
             </h3>
             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
-              Auto-refreshing
+              {statsLoading ? 'Loading...' : 'Auto-refreshing'}
             </span>
           </div>
-          <StatsCards stats={stats} />
+          {statsLoading ? (
+            <div className="flex justify-center items-center py-12 bg-white rounded-xl border border-gray-200">
+              <Loader size={32} className="text-blue-600 animate-spin" />
+              <span className="ml-3 text-gray-500">Loading statistics...</span>
+            </div>
+          ) : (
+            <StatsCards stats={stats} />
+          )}
         </div>
 
         {/* Tabs */}

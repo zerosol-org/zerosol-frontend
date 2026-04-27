@@ -2,6 +2,7 @@
 import { gSheets } from '../lib/googleSheets';
 
 // Exact headers from your "EV" sheet
+// 'Image' (col A) is kept as-is (thumbnail/formula). 'Image URL' is appended as the last column.
 const EV_HEADERS = [
   'Image', 'Make', 'Model', 'Category', 'Price (USD)', 'Exhange Rate', 'Price (GHS)', 
   'Fuel Economy (/km)', 'Fuel Economy (/100 km)', 'Annual Fuel Economy', 
@@ -11,10 +12,12 @@ const EV_HEADERS = [
   'Tailpipe Emissions Yr1', 'Tailpipe Emissions Yr2', 'Tailpipe Emissions Yr3', 
   'Tailpipe Emissions Yr4', 'Tailpipe Emissions Yr5', 'Seating Capacity', 
   'Ground Clearance(mm)', 'Tech & Special Features', 'Cargo Capacity(L)', 
-  '0-60 mph(s)', 'Top Speed(km/h)', 'Horsepower'
+  '0-60 mph(s)', 'Top Speed (km/h)', 'Horsepower',
+  'Image URL'  // ← last column: stores the Cloudinary URL
 ];
 
 // Exact headers from your "ICE" sheet
+// 'Image' (col A) is kept as-is (thumbnail/formula). 'Image URL' is appended as the last column.
 const ICE_HEADERS = [
   'Image', 'Make', 'Model', 'Category', 'Price (USD)', 'Exchange Rate', 'Price (GHS)', 
   'Fuel Economy (/km)', 'Fuel Economy (/100 km)', 'Fuel Economy (annual)', 
@@ -25,24 +28,19 @@ const ICE_HEADERS = [
   'Tailpipe Emissions Yr4', 'Tailpipe Emissions Yr5', 'Seating Capacity', 
   'Fuel Economy (GHS/km)', 'Ground Clearance', 'Apple Car Play', 
   'Tech & Special Features', 'Body Type', 'Drive Type', 'Cargo Capacity', 
-  'Engine Type', '0-60 mph', 'Top Speed', 'Horsepower'
+  'Engine Type', '0-60 mph', 'Top Speed', 'Horsepower',
+  'Image URL'  // ← last column: stores the Cloudinary URL
 ];
 
 // Helper function to safely parse numbers
 const safeParseNumber = (value, defaultValue = 0) => {
   if (value === undefined || value === null || value === '') return defaultValue;
-  
-  // If it's already a number
   if (typeof value === 'number' && !isNaN(value)) return value;
-  
-  // If it's a string, try to parse
   if (typeof value === 'string') {
-    // Remove currency symbols, commas, and spaces
     const cleaned = value.replace(/[$,₵\s]/g, '');
     const parsed = parseFloat(cleaned);
     return !isNaN(parsed) ? parsed : defaultValue;
   }
-  
   return defaultValue;
 };
 
@@ -50,6 +48,80 @@ const safeParseNumber = (value, defaultValue = 0) => {
 const safeParseString = (value, defaultValue = '') => {
   if (value === undefined || value === null) return defaultValue;
   return String(value).trim();
+};
+
+// Maps a normalized vehicle object back to a sheet row using the given headers.
+// preserveExistingImageUrl: when true, skips the Image URL field to avoid overwriting
+const vehicleToRow = (headers, vehicleData, preserveExistingImageUrl = true) => {
+  // Lookup table: sheet column header → normalized field name on vehicleData
+  const headerToField = {
+    // 'Image' (col A) is intentionally NOT mapped — it may contain a formula/thumbnail
+    // The Cloudinary URL goes into 'Image URL' (last column)
+    'Image URL':                           preserveExistingImageUrl ? null : 'image_url',
+    // Shared
+    'Make':                                'make',
+    'Model':                               'model',
+    'Category':                            'category',
+    'Price (USD)':                         'price_usd',
+    'Price (GHS)':                         'price_ghs',
+    // EV typo header
+    'Exhange Rate':                        'exchange_rate',
+    // ICE correct header
+    'Exchange Rate':                       'exchange_rate',
+    'Fuel Economy (/km)':                  'fuel_economy_per_km',
+    'Fuel Economy (/100 km)':              'fuel_economy_per_100km',
+    // EV
+    'Annual Fuel Economy':                 'annual_fuel_economy',
+    // ICE
+    'Fuel Economy (annual)':               'annual_fuel_economy',
+    'Tailpipe emissions /km':              'tailpipe_emissions_per_km',
+    'Tailpipe emissions (/100 km)':        'tailpipe_emissions_per_100km',
+    'Tailpipe emissions /100 km':          'tailpipe_emissions_per_100km',
+    'Annual Tailpipe emissions ':          'annual_tailpipe_emissions',
+    'Average maintenance cost (/km)':      'avg_maintenance_cost_per_km',
+    'Average maintenance cost (/100km)':   'avg_maintenance_cost_per_100km',
+    'Average annual maintenance cost':     'annual_maintenance_cost',
+    'TCO Yr1':                             'tco_yr1',
+    'TCO Yr2':                             'tco_yr2',
+    'TCO Yr3':                             'tco_yr3',
+    'TCO Yr4':                             'tco_yr4',
+    'TCO Yr5':                             'tco_yr5',
+    'Tailpipe Emissions Yr1':              'tailpipe_emissions_yr1',
+    'Tailpipe Emissions Yr2':              'tailpipe_emissions_yr2',
+    'Tailpipe Emissions Yr3':              'tailpipe_emissions_yr3',
+    'Tailpipe Emissions Yr4':              'tailpipe_emissions_yr4',
+    'Tailpipe Emissions Yr5':              'tailpipe_emissions_yr5',
+    'Seating Capacity':                    'seating_capacity',
+    // EV
+    'Ground Clearance(mm)':                'ground_clearance_mm',
+    'Tech & Special Features':             'tech_features',
+    'Cargo Capacity(L)':                   'cargo_capacity_l',
+    '0-60 mph(s)':                         'acceleration_0_60_mph',
+    'Top Speed (km/h)':                    'top_speed_kmh',
+    'Horsepower':                          'horsepower',
+    // ICE specific
+    'Fuel Economy (GHS/km)':               'fuel_economy_ghs_per_km',
+    'Ground Clearance':                    'ground_clearance',
+    'Apple Car Play':                      'apple_car_play',
+    'Body Type':                           'body_type',
+    'Drive Type':                          'drive_type',
+    'Cargo Capacity':                      'cargo_capacity',
+    'Engine Type':                         'engine_type',
+    '0-60 mph':                            'acceleration_0_60_mph',
+    'Top Speed':                           'top_speed',
+  };
+
+  return headers.map(header => {
+    const field = headerToField[header];
+    if (!field) return '';
+    // If preserveExistingImageUrl is true and this is the Image URL field, skip it
+    if (preserveExistingImageUrl && header === 'Image URL') {
+      return '';
+    }
+    const val = vehicleData[field];
+    if (val === undefined || val === null) return '';
+    return val;
+  });
 };
 
 // Helper function to normalize vehicle data to match component expectations
@@ -64,6 +136,44 @@ const normalizeVehicleData = (vehicle, type) => {
   
   // Parse economy numbers
   const fuelEconomyPer100km = safeParseString(vehicle['Fuel Economy (/100 km)'] || vehicle.fuel_economy_per_100km);
+
+  // Parse top speed based on vehicle type - try multiple possible field names
+  let topSpeedValue = '';
+  if (type === 'ev') {
+    // For EV: Try all possible variations
+    topSpeedValue = safeParseString(
+      vehicle['Top Speed (km/h)'] ||      // With space
+      vehicle['Top Speed(km/h)'] ||       // Without space
+      vehicle['Top Speed'] ||             // Just "Top Speed"
+      vehicle.top_speed_kmh ||            // Normalized field
+      vehicle.top_speed
+    );
+  } else {
+    // For ICE: The column is "Top Speed"
+    topSpeedValue = safeParseString(
+      vehicle['Top Speed'] ||             // ICE uses "Top Speed"
+      vehicle['Top Speed (km/h)'] ||      
+      vehicle['Top Speed(km/h)'] ||       
+      vehicle.top_speed ||
+      vehicle.top_speed_kmh
+    );
+  }
+
+  // Ensure top speed is a clean number string
+  if (topSpeedValue) {
+    const numberMatch = topSpeedValue.match(/\d+/);
+    if (numberMatch) {
+      topSpeedValue = numberMatch[0];
+    }
+  }
+
+  // Parse acceleration
+  let accelerationValue = '';
+  if (type === 'ev') {
+    accelerationValue = safeParseString(vehicle['0-60 mph(s)'] || vehicle.acceleration_0_60_mph);
+  } else {
+    accelerationValue = safeParseString(vehicle['0-60 mph'] || vehicle.acceleration_0_60_mph);
+  }
   
   return {
     // Core fields
@@ -75,22 +185,24 @@ const normalizeVehicleData = (vehicle, type) => {
     model: safeParseString(vehicle.Model || vehicle.model),
     category: safeParseString(vehicle.Category || vehicle.category),
     
-    // Price fields (as numbers)
+    // Price fields
     price_usd: priceUSD,
     price_ghs: priceGHS,
+    exchange_rate: safeParseString(vehicle['Exchange Rate'] || vehicle['Exhange Rate'] || vehicle.exchange_rate),
     
-    // Performance fields (as numbers)
+    // Performance fields
     horsepower: horsepower,
-    acceleration_0_60_mph: safeParseString(vehicle['0-60 mph(s)'] || vehicle['0-60 mph'] || vehicle.acceleration_0_60_mph),
-    top_speed_kmh: safeParseString(vehicle['Top Speed(km/h)'] || vehicle['Top Speed'] || vehicle.top_speed_kmh),
+    acceleration_0_60_mph: accelerationValue,
+    top_speed_kmh: topSpeedValue,
+    top_speed: topSpeedValue,
     
     // Economy fields
     fuel_economy_per_100km: fuelEconomyPer100km,
     fuel_economy_per_km: safeParseString(vehicle['Fuel Economy (/km)'] || vehicle.fuel_economy_per_km),
-    annual_fuel_economy: safeParseString(vehicle['Annual Fuel Economy'] || vehicle.annual_fuel_economy),
+    annual_fuel_economy: safeParseString(vehicle['Annual Fuel Economy'] || vehicle['Fuel Economy (annual)'] || vehicle.annual_fuel_economy),
     
     // Emissions fields
-    tailpipe_emissions_per_100km: safeParseString(vehicle['Tailpipe emissions (/100 km)'] || vehicle.tailpipe_emissions_per_100km),
+    tailpipe_emissions_per_100km: safeParseString(vehicle['Tailpipe emissions (/100 km)'] || vehicle['Tailpipe emissions /100 km'] || vehicle.tailpipe_emissions_per_100km),
     tailpipe_emissions_per_km: safeParseString(vehicle['Tailpipe emissions /km'] || vehicle.tailpipe_emissions_per_km),
     annual_tailpipe_emissions: safeParseString(vehicle['Annual Tailpipe emissions '] || vehicle.annual_tailpipe_emissions),
     
@@ -119,8 +231,8 @@ const normalizeVehicleData = (vehicle, type) => {
     cargo_capacity_l: safeParseString(vehicle['Cargo Capacity(L)'] || vehicle.cargo_capacity_l),
     tech_features: safeParseString(vehicle['Tech & Special Features'] || vehicle.tech_features),
     
-    // Image
-    image_url: safeParseString(vehicle.Image || vehicle.image_url),
+    // image_url comes from the 'Image URL' last column
+    image_url: safeParseString(vehicle['Image URL'] || vehicle.image_url),
     
     // ICE specific fields
     fuel_economy_ghs_per_km: safeParseString(vehicle['Fuel Economy (GHS/km)'] || vehicle.fuel_economy_ghs_per_km),
@@ -135,6 +247,18 @@ const normalizeVehicleData = (vehicle, type) => {
     // Original data (for debugging)
     _original: vehicle
   };
+};
+
+// Converts a 0-based column index to a Sheets column letter
+const columnIndexToLetter = (index) => {
+  let letter = '';
+  let n = index + 1;
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    letter = String.fromCharCode(65 + rem) + letter;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letter;
 };
 
 export const googleSheetsService = {
@@ -159,7 +283,7 @@ export const googleSheetsService = {
             rowNumber: idx + 2,
             type: type
           }, type);
-        }).filter(v => v.make); // Filter out empty rows
+        }).filter(v => v.make);
       };
 
       const evFormatted = processRows(evRes, 'ev');
@@ -172,7 +296,6 @@ export const googleSheetsService = {
     }
   },
 
-  // ==================== EV VEHICLES ====================
   async getEVVehicles(page = 1, limit = 10, search = '') {
     try {
       const data = await gSheets.get('EV!A:ZZ');
@@ -190,7 +313,7 @@ export const googleSheetsService = {
           rowNumber: idx + 2,
           type: 'ev'
         }, 'ev');
-      }).filter(v => v.make); // Filter out empty rows
+      }).filter(v => v.make);
 
       if (search) {
         const s = search.toLowerCase();
@@ -221,12 +344,12 @@ export const googleSheetsService = {
       if (!data.values) throw new Error('No data found');
       
       const rowIndex = parseInt(rowId) - 1;
-      if (rowIndex < 0 || rowIndex >= data.values.length - 1) {
+      if (rowIndex < 1 || rowIndex >= data.values.length) {
         throw new Error('Vehicle not found');
       }
       
       const headers = data.values[0];
-      const row = data.values[rowIndex + 1];
+      const row = data.values[rowIndex];
       const rawVehicle = {};
       headers.forEach((h, i) => {
         if (h) rawVehicle[h] = row[i];
@@ -245,20 +368,26 @@ export const googleSheetsService = {
   },
 
   async createEVVehicle(vehicleData) {
-    const row = EV_HEADERS.map(h => vehicleData[h] || vehicleData[h.toLowerCase()] || "");
+    const row = vehicleToRow(EV_HEADERS, vehicleData, false);
     return await gSheets.append('EV!A1', row);
   },
 
   async updateEVVehicle(rowId, vehicleData) {
-    const row = EV_HEADERS.map(h => vehicleData[h] !== undefined ? vehicleData[h] : "");
+    // For regular updates, preserve the existing image URL
+    const row = vehicleToRow(EV_HEADERS, vehicleData, true);
     return await gSheets.update(`EV!A${rowId}`, row);
+  },
+
+  async updateEVImageUrl(rowId, imageUrl) {
+    const colIndex = EV_HEADERS.indexOf('Image URL');
+    const colLetter = columnIndexToLetter(colIndex);
+    return await gSheets.update(`EV!${colLetter}${rowId}`, [imageUrl]);
   },
 
   async deleteEVVehicle(rowId) {
     return await gSheets.clear(`EV!A${rowId}:ZZ${rowId}`);
   },
 
-  // ==================== ICE VEHICLES ====================
   async getICEVehicles(page = 1, limit = 10, search = '') {
     try {
       const data = await gSheets.get('ICE!A:ZZ');
@@ -276,7 +405,7 @@ export const googleSheetsService = {
           rowNumber: idx + 2,
           type: 'ice'
         }, 'ice');
-      }).filter(v => v.make); // Filter out empty rows
+      }).filter(v => v.make);
 
       if (search) {
         const s = search.toLowerCase();
@@ -307,12 +436,12 @@ export const googleSheetsService = {
       if (!data.values) throw new Error('No data found');
       
       const rowIndex = parseInt(rowId) - 1;
-      if (rowIndex < 0 || rowIndex >= data.values.length - 1) {
+      if (rowIndex < 1 || rowIndex >= data.values.length) {
         throw new Error('Vehicle not found');
       }
       
       const headers = data.values[0];
-      const row = data.values[rowIndex + 1];
+      const row = data.values[rowIndex];
       const rawVehicle = {};
       headers.forEach((h, i) => {
         if (h) rawVehicle[h] = row[i];
@@ -331,20 +460,26 @@ export const googleSheetsService = {
   },
 
   async createICEVehicle(vehicleData) {
-    const row = ICE_HEADERS.map(h => vehicleData[h] || vehicleData[h.toLowerCase()] || "");
+    const row = vehicleToRow(ICE_HEADERS, vehicleData, false);
     return await gSheets.append('ICE!A1', row);
   },
 
   async updateICEVehicle(rowId, vehicleData) {
-    const row = ICE_HEADERS.map(h => vehicleData[h] !== undefined ? vehicleData[h] : "");
+    // For regular updates, preserve the existing image URL
+    const row = vehicleToRow(ICE_HEADERS, vehicleData, true);
     return await gSheets.update(`ICE!A${rowId}`, row);
+  },
+
+  async updateICEImageUrl(rowId, imageUrl) {
+    const colIndex = ICE_HEADERS.indexOf('Image URL');
+    const colLetter = columnIndexToLetter(colIndex);
+    return await gSheets.update(`ICE!${colLetter}${rowId}`, [imageUrl]);
   },
 
   async deleteICEVehicle(rowId) {
     return await gSheets.clear(`ICE!A${rowId}:ZZ${rowId}`);
   },
 
-  // ==================== DASHBOARD STATS ====================
   async getDashboardStats() {
     try {
       const [evRes, iceRes] = await Promise.all([
@@ -355,12 +490,10 @@ export const googleSheetsService = {
       const evs = evRes.values ? evRes.values.slice(1) : [];
       const ices = iceRes.values ? iceRes.values.slice(1) : [];
 
-      // Get unique makes
       const evMakes = [...new Set(evs.map(r => r[1] || '').filter(Boolean))];
       const iceMakes = [...new Set(ices.map(r => r[1] || '').filter(Boolean))];
       const allMakes = [...new Set([...evMakes, ...iceMakes])];
 
-      // Get categories
       const evCategories = {};
       evs.forEach(r => {
         const cat = r[3] || 'Unknown';
@@ -373,14 +506,12 @@ export const googleSheetsService = {
         iceCategories[cat] = (iceCategories[cat] || 0) + 1;
       });
 
-      // Get engine types for ICE
       const engineTypes = {};
       ices.forEach(r => {
         const engine = r[34] || 'Unknown';
         engineTypes[engine] = (engineTypes[engine] || 0) + 1;
       });
 
-      // Calculate average prices - properly parse numbers
       const validEVPrices = evs.map(r => {
         const price = r[4];
         if (price && price !== '') {
@@ -407,7 +538,6 @@ export const googleSheetsService = {
         ? Math.round(validICEPrices.reduce((a, b) => a + b, 0) / validICEPrices.length)
         : 0;
 
-      // Calculate average horsepower
       const evHP = evs.map(r => parseFloat(r[32])).filter(h => !isNaN(h) && h > 0);
       const iceHP = ices.map(r => parseFloat(r[37])).filter(h => !isNaN(h) && h > 0);
       
@@ -419,7 +549,6 @@ export const googleSheetsService = {
         ? Math.round(iceHP.reduce((a, b) => a + b, 0) / iceHP.length)
         : 0;
 
-      // Get top brands
       const getTopBrands = (vehicles, limit) => {
         const brandCount = {};
         vehicles.forEach(v => {

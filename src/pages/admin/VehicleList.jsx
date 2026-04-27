@@ -31,41 +31,61 @@ export default function VehicleList() {
   const [totalCount, setTotalCount] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
   const itemsPerPage = 10
+  
+  // Store all vehicles for filtering (client-side pagination)
+  const [allVehicles, setAllVehicles] = useState([])
 
   useEffect(() => {
-    loadVehicles()
-    setCurrentPage(1)
-  }, [type, searchTerm])
+    loadAllVehicles()
+  }, [type])
 
-  const loadVehicles = async () => {
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
+  // Apply filters and pagination whenever dependencies change
+  useEffect(() => {
+    if (allVehicles.length > 0) {
+      filterAndPaginateVehicles()
+    }
+  }, [allVehicles, searchTerm, currentPage])
+
+  const loadAllVehicles = async () => {
     setLoading(true)
     setError(null)
     try {
-      const allVehicles = await adminService.getAllVehicles()
-      
-      const filteredByType = allVehicles.filter(v => v.type === type)
-      
-      const searched = filteredByType.filter(v => {
-        const searchLower = searchTerm.toLowerCase()
-        return (
-          v.make?.toLowerCase().includes(searchLower) ||
-          v.model?.toLowerCase().includes(searchLower) ||
-          v.category?.toLowerCase().includes(searchLower)
-        )
-      })
-      
-      setTotalCount(searched.length)
-      
-      const start = (currentPage - 1) * itemsPerPage
-      const paginated = searched.slice(start, start + itemsPerPage)
-      
-      setVehicles(paginated)
+      const data = await adminService.getAllVehicles()
+      setAllVehicles(data)
     } catch (err) {
       setError(err.message)
       toast.error('Failed to load vehicles: ' + err.message)
     } finally {
       setLoading(false)
     }
+  }
+
+  const filterAndPaginateVehicles = () => {
+    // Filter by type (EV/ICE)
+    const filteredByType = allVehicles.filter(v => v.type === type)
+    
+    // Apply search filter
+    const searched = filteredByType.filter(v => {
+      const searchLower = searchTerm.toLowerCase()
+      return (
+        v.make?.toLowerCase().includes(searchLower) ||
+        v.model?.toLowerCase().includes(searchLower) ||
+        v.category?.toLowerCase().includes(searchLower)
+      )
+    })
+    
+    setTotalCount(searched.length)
+    
+    // Calculate pagination
+    const start = (currentPage - 1) * itemsPerPage
+    const paginated = searched.slice(start, start + itemsPerPage)
+    
+    setVehicles(paginated)
   }
 
   const openDeleteModal = (vehicle) => {
@@ -93,16 +113,30 @@ export default function VehicleList() {
       
       toast.success(`${vehicleToDelete.make} ${vehicleToDelete.model} deleted successfully!`)
       
-      setVehicles(prev => prev.filter(v => 
+      // Update all vehicles
+      const updatedVehicles = allVehicles.filter(v => 
         !(v.type === vehicleToDelete.type && v.displayId === vehicleToDelete.displayId)
-      ))
-      
-      setTotalCount(prev => prev - 1)
+      )
+      setAllVehicles(updatedVehicles)
       
       closeDeleteModal()
       
-      if (vehicles.length === 1 && currentPage > 1) {
-        setCurrentPage(prev => prev - 1)
+      // Check if current page becomes empty
+      const filteredByType = updatedVehicles.filter(v => v.type === type)
+      const searched = filteredByType.filter(v => {
+        const searchLower = searchTerm.toLowerCase()
+        return (
+          v.make?.toLowerCase().includes(searchLower) ||
+          v.model?.toLowerCase().includes(searchLower) ||
+          v.category?.toLowerCase().includes(searchLower)
+        )
+      })
+      
+      const newTotalPages = Math.ceil(searched.length / itemsPerPage)
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages)
+      } else if (searched.length === 0) {
+        setCurrentPage(1)
       }
       
     } catch (err) {
@@ -112,7 +146,7 @@ export default function VehicleList() {
   }
 
   const handleBulkUploadSuccess = () => {
-    loadVehicles()
+    loadAllVehicles()
     setShowBulkUpload(false)
   }
 
@@ -168,20 +202,6 @@ export default function VehicleList() {
           >
             <Eye size={18} />
           </Link>
-          {/* <Link
-            to={`/admin/vehicles/${row.type}/${row.displayId}/edit`}
-            className="p-1 text-green-600 hover:bg-green-50 rounded"
-            title="Edit Vehicle"
-          >
-            <Edit size={18} />
-          </Link>
-          <button
-            onClick={() => openDeleteModal(row)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded"
-            title="Delete Vehicle"
-          >
-            <Trash2 size={18} />
-          </button> */}
         </div>
       )
     }
@@ -220,22 +240,7 @@ export default function VehicleList() {
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            {/* <button
-              onClick={() => setShowBulkUpload(true)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              <Upload size={18} />
-              <span className="hidden sm:inline">Bulk Upload</span>
-              <span className="sm:hidden">Bulk</span>
-            </button>
-            <Link
-              to={`/admin/vehicles/${type}/new`}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <PlusCircle size={18} />
-              <span className="hidden sm:inline">Add New</span>
-              <span className="sm:hidden">Add</span>
-            </Link> */}
+            {/* Add/Upload buttons are commented out as per requirement */}
           </div>
         </div>
 

@@ -1,367 +1,3 @@
-// // src/services/vehicleService.js
-// import { supabase } from '../lib/supabase'
-
-// export const vehicleService = {
-//   // Get all EV vehicles
-//   async getEVVehicles() {
-//     const { data, error } = await supabase
-//       .from('ev_vehicles')
-//       .select('*')
-//       .order('make')
-    
-//     if (error) throw error
-//     return data
-//   },
-
-//   // Get all ICE vehicles
-//   async getICEVehicles() {
-//     const { data, error } = await supabase
-//       .from('ice_vehicles')
-//       .select('*')
-//       .order('make')
-    
-//     if (error) throw error
-//     return data
-//   },
-
-//   // Get all vehicles (both EV and ICE) with ALL fields for comparison
-//   async getAllVehicles() {
-//     const [evVehicles, iceVehicles] = await Promise.all([
-//       this.getEVVehicles(),
-//       this.getICEVehicles()
-//     ])
-    
-//     // Transform EV data with ALL fields
-//     const evFormatted = evVehicles.map(v => ({
-//       ...v, // Spread all original fields first
-//       id: `ev_${v.id}`,
-//       displayId: v.id,
-//       type: 'ev',
-//       fullName: `${v.make} ${v.model}`,
-//       fuel: 'Electric',
-      
-//       // Ensure these fields are properly mapped (they should already exist from spread)
-//       fuel_economy_per_km: v.fuel_economy_per_km,
-//       fuel_economy_per_100km: v.fuel_economy_per_100km,
-//       annual_fuel_economy: v.annual_fuel_economy,
-//       tailpipe_emissions_per_km: v.tailpipe_emissions_per_km,
-//       tailpipe_emissions_per_100km: v.tailpipe_emissions_per_100km,
-//       annual_tailpipe_emissions: v.annual_tailpipe_emissions,
-//       avg_maintenance_cost_per_km: v.avg_maintenance_cost_per_km,
-//       avg_maintenance_cost_per_100km: v.avg_maintenance_cost_per_100km,
-//       annual_maintenance_cost: v.annual_maintenance_cost,
-      
-//       // TCO fields
-//       tco: {
-//         year1: v.tco_yr1,
-//         year2: v.tco_yr2,
-//         year3: v.tco_yr3,
-//         year4: v.tco_yr4,
-//         year5: v.tco_yr5
-//       },
-      
-//       // Emissions fields
-//       emissions: {
-//         year1: v.tailpipe_emissions_yr1,
-//         year2: v.tailpipe_emissions_yr2,
-//         year3: v.tailpipe_emissions_yr3,
-//         year4: v.tailpipe_emissions_yr4,
-//         year5: v.tailpipe_emissions_yr5
-//       },
-      
-//       // Other fields
-//       seating_capacity: v.seating_capacity,
-//       horsepower: v.horsepower,
-//       ground_clearance_mm: v.ground_clearance_mm,
-//       cargo_capacity_l: v.cargo_capacity_l,
-//       acceleration_0_60_mph: v.acceleration_0_60_mph,
-//       top_speed_kmh: v.top_speed_kmh,
-//       tech_features: v.tech_features,
-      
-//       // ICE-specific fields (will be undefined for EV)
-//       fuel_economy_ghs_per_km: v.fuel_economy_ghs_per_km,
-//       ground_clearance: v.ground_clearance,
-//       apple_car_play: v.apple_car_play,
-//       body_type: v.body_type,
-//       drive_type: v.drive_type,
-//       cargo_capacity: v.cargo_capacity,
-//       engine_type: v.engine_type,
-//       top_speed: v.top_speed,
-//       android_auto: v.android_auto
-//     }))
-
-//     // Transform ICE data with ALL fields
-//     const iceFormatted = iceVehicles.map(v => ({
-//       ...v, // Spread all original fields first
-//       id: `ice_${v.id}`,
-//       displayId: v.id,
-//       type: 'ice',
-//       fullName: `${v.make} ${v.model}`,
-//       fuel: v.engine_type || 'Petrol',
-      
-//       // Fuel economy fields
-//       fuel_economy_per_km: v.fuel_economy_per_km,
-//       fuel_economy_per_100km: v.fuel_economy_per_100km,
-//       annual_fuel_economy: v.annual_fuel_economy,
-      
-//       // Emissions fields
-//       tailpipe_emissions_per_km: v.tailpipe_emissions_per_km,
-//       tailpipe_emissions_per_100km: v.tailpipe_emissions_per_100km,
-//       annual_tailpipe_emissions: v.annual_tailpipe_emissions,
-      
-//       // Maintenance fields
-//       avg_maintenance_cost_per_km: v.avg_maintenance_cost_per_km,
-//       avg_maintenance_cost_per_100km: v.avg_maintenance_cost_per_100km,
-//       annual_maintenance_cost: v.annual_maintenance_cost,
-      
-//       // TCO fields
-//       tco: {
-//         year1: v.tco_yr1,
-//         year2: v.tco_yr2,
-//         year3: v.tco_yr3,
-//         year4: v.tco_yr4,
-//         year5: v.tco_yr5
-//       },
-      
-//       // Emissions fields
-//       emissions: {
-//         year1: v.tailpipe_emissions_yr1,
-//         year2: v.tailpipe_emissions_yr2,
-//         year3: v.tailpipe_emissions_yr3,
-//         year4: v.tailpipe_emissions_yr4,
-//         year5: v.tailpipe_emissions_yr5
-//       },
-      
-//       // Other fields
-//       seating_capacity: v.seating_capacity,
-//       horsepower: v.horsepower,
-//       fuel_economy_ghs_per_km: v.fuel_economy_ghs_per_km,
-//       ground_clearance: v.ground_clearance,
-//       apple_car_play: v.apple_car_play,
-//       body_type: v.body_type,
-//       drive_type: v.drive_type,
-//       cargo_capacity: v.cargo_capacity,
-//       engine_type: v.engine_type,
-//       acceleration_0_60_mph: v.acceleration_0_60_mph,
-//       top_speed: v.top_speed,
-//       android_auto: v.android_auto,
-      
-//       // EV-specific fields (will be undefined for ICE)
-//       ground_clearance_mm: v.ground_clearance_mm,
-//       cargo_capacity_l: v.cargo_capacity_l,
-//       top_speed_kmh: v.top_speed_kmh,
-//       tech_features: v.tech_features
-//     }))
-
-//     console.log('Sample EV vehicle:', evFormatted[0])
-//     console.log('Sample ICE vehicle:', iceFormatted[0])
-
-//     return [...evFormatted, ...iceFormatted]
-//   },
-
-//   // Get vehicle by ID
-//   async getVehicleById(id, type) {
-//     const table = type === 'ev' ? 'ev_vehicles' : 'ice_vehicles'
-//     const numericId = id.replace(/^(ev_|ice_)/, '')
-    
-//     const { data, error } = await supabase
-//       .from(table)
-//       .select('*')
-//       .eq('id', numericId)
-//       .single()
-    
-//     if (error) throw error
-    
-//     // Format the vehicle with all fields
-//     const formatted = {
-//       ...data,
-//       type,
-//       id: `${type}_${data.id}`,
-//       displayId: data.id,
-//       fullName: `${data.make} ${data.model}`,
-//       fuel: type === 'ev' ? 'Electric' : (data.engine_type || 'Petrol'),
-      
-//       // Create tco object
-//       tco: {
-//         year1: data.tco_yr1,
-//         year2: data.tco_yr2,
-//         year3: data.tco_yr3,
-//         year4: data.tco_yr4,
-//         year5: data.tco_yr5
-//       },
-      
-//       // Create emissions object
-//       emissions: {
-//         year1: data.tailpipe_emissions_yr1,
-//         year2: data.tailpipe_emissions_yr2,
-//         year3: data.tailpipe_emissions_yr3,
-//         year4: data.tailpipe_emissions_yr4,
-//         year5: data.tailpipe_emissions_yr5
-//       }
-//     }
-    
-//     return formatted
-//   },
-
-//   // Search vehicles
-//   async searchVehicles(query) {
-//     if (!query || query.length < 2) return []
-
-//     try {
-//       const [evResults, iceResults] = await Promise.all([
-//         supabase
-//           .from('ev_vehicles')
-//           .select('*')
-//           .or(`make.ilike.%${query}%,model.ilike.%${query}%`)
-//           .limit(10),
-        
-//         supabase
-//           .from('ice_vehicles')
-//           .select('*')
-//           .or(`make.ilike.%${query}%,model.ilike.%${query}%`)
-//           .limit(10)
-//       ])
-
-//       const evVehicles = (evResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ev',
-//         id: `ev_${v.id}`,
-//         displayId: v.id,
-//         fullName: `${v.make} ${v.model}`
-//       }))
-
-//       const iceVehicles = (iceResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ice',
-//         id: `ice_${v.id}`,
-//         displayId: v.id,
-//         fullName: `${v.make} ${v.model}`
-//       }))
-
-//       return [...evVehicles, ...iceVehicles].slice(0, 10)
-//     } catch (error) {
-//       console.error('Error searching vehicles:', error)
-//       return []
-//     }
-//   },
-
-//   // Search by category
-//   async searchByCategory(category, query = '') {
-//     try {
-//       const [evResults, iceResults] = await Promise.all([
-//         supabase
-//           .from('ev_vehicles')
-//           .select('*')
-//           .eq('category', category)
-//           .or(`make.ilike.%${query}%,model.ilike.%${query}%`)
-//           .limit(10),
-        
-//         supabase
-//           .from('ice_vehicles')
-//           .select('*')
-//           .eq('category', category)
-//           .or(`make.ilike.%${query}%,model.ilike.%${query}%`)
-//           .limit(10)
-//       ])
-
-//       const evVehicles = (evResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ev'
-//       }))
-
-//       const iceVehicles = (iceResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ice'
-//       }))
-
-//       return [...evVehicles, ...iceVehicles]
-//     } catch (error) {
-//       console.error('Error searching by category:', error)
-//       return []
-//     }
-//   },
-
-//   // Get popular/recent vehicles
-//   async getPopularVehicles(limit = 6) {
-//     try {
-//       const [evResults, iceResults] = await Promise.all([
-//         supabase
-//           .from('ev_vehicles')
-//           .select('*')
-//           .order('created_at', { ascending: false })
-//           .limit(limit),
-        
-//         supabase
-//           .from('ice_vehicles')
-//           .select('*')
-//           .order('created_at', { ascending: false })
-//           .limit(limit)
-//       ])
-
-//       const evVehicles = (evResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ev'
-//       }))
-
-//       const iceVehicles = (iceResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ice'
-//       }))
-
-//       // Interleave EV and ICE vehicles
-//       const combined = []
-//       const maxLength = Math.max(evVehicles.length, iceVehicles.length)
-      
-//       for (let i = 0; i < maxLength; i++) {
-//         if (i < evVehicles.length) combined.push(evVehicles[i])
-//         if (i < iceVehicles.length) combined.push(iceVehicles[i])
-//       }
-
-//       return combined.slice(0, limit)
-//     } catch (error) {
-//       console.error('Error getting popular vehicles:', error)
-//       return []
-//     }
-//   },
-
-//   // Get vehicles by make
-//   async getVehiclesByMake(make) {
-//     try {
-//       const [evResults, iceResults] = await Promise.all([
-//         supabase
-//           .from('ev_vehicles')
-//           .select('*')
-//           .eq('make', make)
-//           .limit(20),
-        
-//         supabase
-//           .from('ice_vehicles')
-//           .select('*')
-//           .eq('make', make)
-//           .limit(20)
-//       ])
-
-//       const evVehicles = (evResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ev'
-//       }))
-
-//       const iceVehicles = (iceResults.data || []).map(v => ({
-//         ...v,
-//         type: 'ice'
-//       }))
-
-//       return [...evVehicles, ...iceVehicles]
-//     } catch (error) {
-//       console.error('Error getting vehicles by make:', error)
-//       return []
-//     }
-//   }
-// }
-
-
-
-
 // src/services/vehicleService.js
 import { gSheets } from '../lib/googleSheets';
 
@@ -392,15 +28,38 @@ const normalizeVehicle = (rawVehicle, type, rowId) => {
   // Parse performance
   const horsepower = safeParseNumber(rawVehicle.Horsepower || rawVehicle.horsepower);
   const seatingCapacity = safeParseNumber(rawVehicle['Seating Capacity'] || rawVehicle.seating_capacity);
-  const acceleration = safeParseString(rawVehicle['0-60 mph(s)'] || rawVehicle['0-60 mph'] || rawVehicle.acceleration_0_60_mph);
+  
+  // Parse acceleration - handle both EV and ICE column names
+  let acceleration = '';
+  if (type === 'ev') {
+    acceleration = safeParseString(rawVehicle['0-60 mph(s)'] || rawVehicle['0-60 mph'] || rawVehicle.acceleration_0_60_mph);
+  } else {
+    acceleration = safeParseString(rawVehicle['0-60 mph'] || rawVehicle['0-60 mph(s)'] || rawVehicle.acceleration_0_60_mph);
+  }
+  
+  // Parse top speed - IMPORTANT: ICE uses "Top Speed", EV uses "Top Speed(km/h)"
+  let topSpeedValue = '';
+  if (type === 'ev') {
+    topSpeedValue = safeParseString(
+      rawVehicle['Top Speed (km/h)'] ||
+      rawVehicle.top_speed_kmh || 
+      rawVehicle.top_speed
+    );
+  } else {
+    topSpeedValue = safeParseString(
+      rawVehicle['Top Speed'] || 
+      rawVehicle.top_speed || 
+      rawVehicle.top_speed_kmh
+    );
+  }
   
   // Parse economy
   const fuelEconomyPer100km = safeParseString(rawVehicle['Fuel Economy (/100 km)'] || rawVehicle.fuel_economy_per_100km);
   const fuelEconomyPerKm = safeParseString(rawVehicle['Fuel Economy (/km)'] || rawVehicle.fuel_economy_per_km);
-  const annualFuelEconomy = safeParseString(rawVehicle['Annual Fuel Economy'] || rawVehicle.annual_fuel_economy);
+  const annualFuelEconomy = safeParseString(rawVehicle['Annual Fuel Economy'] || rawVehicle['Fuel Economy (annual)'] || rawVehicle.annual_fuel_economy);
   
   // Parse emissions
-  const tailpipePer100km = safeParseString(rawVehicle['Tailpipe emissions (/100 km)'] || rawVehicle.tailpipe_emissions_per_100km);
+  const tailpipePer100km = safeParseString(rawVehicle['Tailpipe emissions (/100 km)'] || rawVehicle['Tailpipe emissions /100 km'] || rawVehicle.tailpipe_emissions_per_100km);
   const tailpipePerKm = safeParseString(rawVehicle['Tailpipe emissions /km'] || rawVehicle.tailpipe_emissions_per_km);
   const annualTailpipe = safeParseString(rawVehicle['Annual Tailpipe emissions '] || rawVehicle.annual_tailpipe_emissions);
   
@@ -423,8 +82,14 @@ const normalizeVehicle = (rawVehicle, type, rowId) => {
   const emissionsYr4 = safeParseString(rawVehicle['Tailpipe Emissions Yr4'] || rawVehicle.tailpipe_emissions_yr4);
   const emissionsYr5 = safeParseString(rawVehicle['Tailpipe Emissions Yr5'] || rawVehicle.tailpipe_emissions_yr5);
   
-  // Handle image URL
-  let imageUrl = safeParseString(rawVehicle.Image || rawVehicle.image_url);
+  // Handle image URL.
+  // Priority: 'Image URL' (last col, Cloudinary URL set by admin upload) →
+  //           'Image' (col A, may be a legacy URL or Drive link)
+  let imageUrl = safeParseString(
+    rawVehicle['Image URL'] ||   // last column — Cloudinary URL (preferred)
+    rawVehicle.image_url  ||     // normalized field (fallback)
+    rawVehicle.Image             // col A legacy fallback
+  );
   
   // If it's a Google Drive link, convert to direct image URL
   if (imageUrl && imageUrl.includes('drive.google.com')) {
@@ -432,6 +97,22 @@ const normalizeVehicle = (rawVehicle, type, rowId) => {
     if (match) {
       imageUrl = `https://drive.google.com/uc?export=view&id=${match[0]}`;
     }
+  }
+  
+  // Parse ground clearance
+  let groundClearanceValue = '';
+  if (type === 'ev') {
+    groundClearanceValue = safeParseString(rawVehicle['Ground Clearance(mm)'] || rawVehicle.ground_clearance_mm);
+  } else {
+    groundClearanceValue = safeParseString(rawVehicle['Ground Clearance'] || rawVehicle.ground_clearance);
+  }
+  
+  // Parse cargo capacity
+  let cargoCapacityValue = '';
+  if (type === 'ev') {
+    cargoCapacityValue = safeParseString(rawVehicle['Cargo Capacity(L)'] || rawVehicle.cargo_capacity_l);
+  } else {
+    cargoCapacityValue = safeParseString(rawVehicle['Cargo Capacity'] || rawVehicle.cargo_capacity);
   }
   
   // Base vehicle object
@@ -452,12 +133,14 @@ const normalizeVehicle = (rawVehicle, type, rowId) => {
     // Price fields
     price_usd: priceUSD,
     price_ghs: priceGHS,
+    // EV sheet has typo 'Exhange Rate'; ICE sheet has correct 'Exchange Rate'
+    exchange_rate: safeParseString(rawVehicle['Exchange Rate'] || rawVehicle['Exhange Rate'] || rawVehicle.exchange_rate),
     
     // Performance fields
     horsepower: horsepower,
     acceleration_0_60_mph: acceleration,
-    top_speed: safeParseString(rawVehicle['Top Speed'] || rawVehicle.top_speed),
-    top_speed_kmh: safeParseString(rawVehicle['Top Speed(km/h)'] || rawVehicle.top_speed_kmh),
+    top_speed: topSpeedValue,
+    top_speed_kmh: topSpeedValue,
     
     // Economy fields
     fuel_economy_per_km: fuelEconomyPerKm,
@@ -483,6 +166,13 @@ const normalizeVehicle = (rawVehicle, type, rowId) => {
       year5: tcoYr5
     },
     
+    // TCO direct fields (for backward compatibility)
+    tco_yr1: tcoYr1,
+    tco_yr2: tcoYr2,
+    tco_yr3: tcoYr3,
+    tco_yr4: tcoYr4,
+    tco_yr5: tcoYr5,
+    
     // Emissions object
     emissions: {
       year1: emissionsYr1,
@@ -492,30 +182,41 @@ const normalizeVehicle = (rawVehicle, type, rowId) => {
       year5: emissionsYr5
     },
     
+    // Emissions direct fields (for backward compatibility)
+    tailpipe_emissions_yr1: emissionsYr1,
+    tailpipe_emissions_yr2: emissionsYr2,
+    tailpipe_emissions_yr3: emissionsYr3,
+    tailpipe_emissions_yr4: emissionsYr4,
+    tailpipe_emissions_yr5: emissionsYr5,
+    
     // Other fields
     seating_capacity: seatingCapacity,
-    ground_clearance_mm: safeParseString(rawVehicle['Ground Clearance(mm)'] || rawVehicle.ground_clearance_mm),
-    cargo_capacity_l: safeParseString(rawVehicle['Cargo Capacity(L)'] || rawVehicle.cargo_capacity_l),
+    ground_clearance_mm: groundClearanceValue,
+    cargo_capacity_l: cargoCapacityValue,
     tech_features: safeParseString(rawVehicle['Tech & Special Features'] || rawVehicle.tech_features),
+    
+    // Metadata
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
   
   // Add ICE-specific fields
   if (type === 'ice') {
     vehicle.fuel_economy_ghs_per_km = safeParseString(rawVehicle['Fuel Economy (GHS/km)'] || rawVehicle.fuel_economy_ghs_per_km);
-    vehicle.ground_clearance = safeParseString(rawVehicle['Ground Clearance'] || rawVehicle.ground_clearance);
+    vehicle.ground_clearance = groundClearanceValue;
     vehicle.apple_car_play = safeParseString(rawVehicle['Apple Car Play'] || rawVehicle.apple_car_play);
     vehicle.body_type = safeParseString(rawVehicle['Body Type'] || rawVehicle.body_type);
     vehicle.drive_type = safeParseString(rawVehicle['Drive Type'] || rawVehicle.drive_type);
-    vehicle.cargo_capacity = safeParseString(rawVehicle['Cargo Capacity'] || rawVehicle.cargo_capacity);
+    vehicle.cargo_capacity = cargoCapacityValue;
     vehicle.engine_type = safeParseString(rawVehicle['Engine Type'] || rawVehicle.engine_type);
     vehicle.android_auto = safeParseString(rawVehicle['Android Auto'] || rawVehicle.android_auto);
   }
   
   // Add EV-specific fields
   if (type === 'ev') {
-    vehicle.ground_clearance_mm = safeParseString(rawVehicle['Ground Clearance(mm)'] || rawVehicle.ground_clearance_mm);
-    vehicle.cargo_capacity_l = safeParseString(rawVehicle['Cargo Capacity(L)'] || rawVehicle.cargo_capacity_l);
-    vehicle.top_speed_kmh = safeParseString(rawVehicle['Top Speed(km/h)'] || rawVehicle.top_speed_kmh);
+    vehicle.ground_clearance_mm = groundClearanceValue;
+    vehicle.cargo_capacity_l = cargoCapacityValue;
+    vehicle.top_speed_kmh = topSpeedValue;
     vehicle.tech_features = safeParseString(rawVehicle['Tech & Special Features'] || rawVehicle.tech_features);
   }
   
@@ -532,6 +233,8 @@ export const vehicleService = {
       const headers = data.values[0];
       const rows = data.values.slice(1);
       
+      // rowNumber = idx + 2 is set during map (before filter) so blank rows in the
+      // sheet don't shift the row numbers of vehicles that come after them.
       const vehicles = rows.map((row, idx) => {
         const rawVehicle = {};
         headers.forEach((h, i) => {
@@ -581,16 +284,6 @@ export const vehicleService = {
       
       const allVehicles = [...evVehicles, ...iceVehicles];
       
-      if (allVehicles.length > 0) {
-        console.log('Sample vehicle:', {
-          make: allVehicles[0].make,
-          model: allVehicles[0].model,
-          type: allVehicles[0].type,
-          price: allVehicles[0].price_usd,
-          image: allVehicles[0].image_url ? 'Has image' : 'No image'
-        });
-      }
-      
       console.log(`Total vehicles loaded: ${allVehicles.length} (${evVehicles.length} EV, ${iceVehicles.length} ICE)`);
       
       return allVehicles;
@@ -614,12 +307,16 @@ export const vehicleService = {
       const rowId = id.toString().replace(/^(ev_|ice_)/, '');
       const numericId = parseInt(rowId);
       
-      if (isNaN(numericId) || numericId < 2 || numericId >= data.values.length + 1) {
+      // data.values[0]  = headers  (sheet row 1)
+      // data.values[1]  = sheet row 2  (first data row)
+      // data.values[N]  = sheet row N+1
+      // To read sheet row numericId: data.values[numericId - 1]
+      if (isNaN(numericId) || numericId < 2 || numericId > data.values.length) {
         throw new Error('Invalid vehicle ID');
       }
       
       const headers = data.values[0];
-      const row = data.values[numericId - 1];
+      const row = data.values[numericId - 1]; // correct: sheet row numericId
       const rawVehicle = {};
       headers.forEach((h, i) => {
         if (h && row[i] !== undefined) rawVehicle[h] = row[i];
