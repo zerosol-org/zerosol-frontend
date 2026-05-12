@@ -1,6 +1,6 @@
 // src/pages/Admin/Login.jsx
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, LogIn, Mail, Send, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAdminAuth } from '../../hooks/useAdminAuth'
@@ -175,11 +175,16 @@ export default function Login() {
         <div className="max-w-md w-full">
           {/* Logo/Brand */}
           <div className="flex flex-col justify-center items-center gap-2 mb-8">
+            <Link 
+            to="/"
+            >
+            
             <img
             src={Logo}
             alt="Zerosol Fleets"
             className="w-[9rem] object-contain"
           />
+          </Link>
             <p className="text-gray-600 mt-2">Admin Dashboard Login</p>
           </div>
 

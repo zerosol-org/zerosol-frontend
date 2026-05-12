@@ -2,7 +2,6 @@
 import { gSheets } from '../lib/googleSheets';
 
 // Exact headers from your "EV" sheet
-// 'Image' (col A) is kept as-is (thumbnail/formula). 'Image URL' is appended as the last column.
 const EV_HEADERS = [
   'Image', 'Make', 'Model', 'Category', 'Price (USD)', 'Exhange Rate', 'Price (GHS)', 
   'Fuel Economy (/km)', 'Fuel Economy (/100 km)', 'Annual Fuel Economy', 
@@ -13,23 +12,22 @@ const EV_HEADERS = [
   'Tailpipe Emissions Yr4', 'Tailpipe Emissions Yr5', 'Seating Capacity', 
   'Ground Clearance(mm)', 'Tech & Special Features', 'Cargo Capacity(L)', 
   '0-60 mph(s)', 'Top Speed (km/h)', 'Horsepower',
-  'Image URL'  // ← last column: stores the Cloudinary URL
+  'Image URL'
 ];
 
-// Exact headers from your "ICE" sheet
-// 'Image' (col A) is kept as-is (thumbnail/formula). 'Image URL' is appended as the last column.
+// Exact headers from your "ICE" sheet - UPDATED to match your actual columns
 const ICE_HEADERS = [
   'Image', 'Make', 'Model', 'Category', 'Price (USD)', 'Exchange Rate', 'Price (GHS)', 
-  'Fuel Economy (/km)', 'Fuel Economy (/100 km)', 'Fuel Economy (annual)', 
-  'Tailpipe emissions /km', 'Tailpipe emissions /100 km', 'Annual Tailpipe emissions ', 
+  'Fuel Economy (/km)', 'Fuel Economy (/100 km)', 'Annual Fuel Economy', 
+  'Tailpipe emissions /km', 'Tailpipe emissions (/100 km)', 'Annual Tailpipe emissions ', 
   'Average maintenance cost (/km)', 'Average maintenance cost (/100km)', 
   'Average annual maintenance cost', 'TCO Yr1', 'TCO Yr2', 'TCO Yr3', 'TCO Yr4', 'TCO Yr5', 
   'Tailpipe Emissions Yr1', 'Tailpipe Emissions Yr2', 'Tailpipe Emissions Yr3', 
   'Tailpipe Emissions Yr4', 'Tailpipe Emissions Yr5', 'Seating Capacity', 
-  'Fuel Economy (GHS/km)', 'Ground Clearance', 'Apple Car Play', 
-  'Tech & Special Features', 'Body Type', 'Drive Type', 'Cargo Capacity', 
-  'Engine Type', '0-60 mph', 'Top Speed', 'Horsepower',
-  'Image URL'  // ← last column: stores the Cloudinary URL
+  'Ground Clearance', 'Tech & Special Features', 'Cargo Capacity', 
+  '0-60 mph', 'Top Speed', 'Horsepower', 
+  'Apple Car Play', 'Body Type', 'Drive Type', 'Engine Type',
+  'Image URL'  // ← Last column
 ];
 
 // Helper function to safely parse numbers
@@ -50,71 +48,58 @@ const safeParseString = (value, defaultValue = '') => {
   return String(value).trim();
 };
 
-// Maps a normalized vehicle object back to a sheet row using the given headers.
-// preserveExistingImageUrl: when true, skips the Image URL field to avoid overwriting
+// Maps a normalized vehicle object back to a sheet row
 const vehicleToRow = (headers, vehicleData, preserveExistingImageUrl = true) => {
-  // Lookup table: sheet column header → normalized field name on vehicleData
   const headerToField = {
-    // 'Image' (col A) is intentionally NOT mapped — it may contain a formula/thumbnail
-    // The Cloudinary URL goes into 'Image URL' (last column)
-    'Image URL':                           preserveExistingImageUrl ? null : 'image_url',
-    // Shared
-    'Make':                                'make',
-    'Model':                               'model',
-    'Category':                            'category',
-    'Price (USD)':                         'price_usd',
-    'Price (GHS)':                         'price_ghs',
-    // EV typo header
-    'Exhange Rate':                        'exchange_rate',
-    // ICE correct header
-    'Exchange Rate':                       'exchange_rate',
-    'Fuel Economy (/km)':                  'fuel_economy_per_km',
-    'Fuel Economy (/100 km)':              'fuel_economy_per_100km',
-    // EV
-    'Annual Fuel Economy':                 'annual_fuel_economy',
-    // ICE
-    'Fuel Economy (annual)':               'annual_fuel_economy',
-    'Tailpipe emissions /km':              'tailpipe_emissions_per_km',
-    'Tailpipe emissions (/100 km)':        'tailpipe_emissions_per_100km',
-    'Tailpipe emissions /100 km':          'tailpipe_emissions_per_100km',
-    'Annual Tailpipe emissions ':          'annual_tailpipe_emissions',
-    'Average maintenance cost (/km)':      'avg_maintenance_cost_per_km',
-    'Average maintenance cost (/100km)':   'avg_maintenance_cost_per_100km',
-    'Average annual maintenance cost':     'annual_maintenance_cost',
-    'TCO Yr1':                             'tco_yr1',
-    'TCO Yr2':                             'tco_yr2',
-    'TCO Yr3':                             'tco_yr3',
-    'TCO Yr4':                             'tco_yr4',
-    'TCO Yr5':                             'tco_yr5',
-    'Tailpipe Emissions Yr1':              'tailpipe_emissions_yr1',
-    'Tailpipe Emissions Yr2':              'tailpipe_emissions_yr2',
-    'Tailpipe Emissions Yr3':              'tailpipe_emissions_yr3',
-    'Tailpipe Emissions Yr4':              'tailpipe_emissions_yr4',
-    'Tailpipe Emissions Yr5':              'tailpipe_emissions_yr5',
-    'Seating Capacity':                    'seating_capacity',
-    // EV
-    'Ground Clearance(mm)':                'ground_clearance_mm',
-    'Tech & Special Features':             'tech_features',
-    'Cargo Capacity(L)':                   'cargo_capacity_l',
-    '0-60 mph(s)':                         'acceleration_0_60_mph',
-    'Top Speed (km/h)':                    'top_speed_kmh',
-    'Horsepower':                          'horsepower',
-    // ICE specific
-    'Fuel Economy (GHS/km)':               'fuel_economy_ghs_per_km',
-    'Ground Clearance':                    'ground_clearance',
-    'Apple Car Play':                      'apple_car_play',
-    'Body Type':                           'body_type',
-    'Drive Type':                          'drive_type',
-    'Cargo Capacity':                      'cargo_capacity',
-    'Engine Type':                         'engine_type',
-    '0-60 mph':                            'acceleration_0_60_mph',
-    'Top Speed':                           'top_speed',
+    'Image URL': preserveExistingImageUrl ? null : 'image_url',
+    'Make': 'make',
+    'Model': 'model',
+    'Category': 'category',
+    'Price (USD)': 'price_usd',
+    'Price (GHS)': 'price_ghs',
+    'Exhange Rate': 'exchange_rate',
+    'Exchange Rate': 'exchange_rate',
+    'Fuel Economy (/km)': 'fuel_economy_per_km',
+    'Fuel Economy (/100 km)': 'fuel_economy_per_100km',
+    'Annual Fuel Economy': 'annual_fuel_economy',
+    'Tailpipe emissions /km': 'tailpipe_emissions_per_km',
+    'Tailpipe emissions (/100 km)': 'tailpipe_emissions_per_100km',
+    'Tailpipe emissions /100 km': 'tailpipe_emissions_per_100km',
+    'Annual Tailpipe emissions ': 'annual_tailpipe_emissions',
+    'Average maintenance cost (/km)': 'avg_maintenance_cost_per_km',
+    'Average maintenance cost (/100km)': 'avg_maintenance_cost_per_100km',
+    'Average annual maintenance cost': 'annual_maintenance_cost',
+    'TCO Yr1': 'tco_yr1',
+    'TCO Yr2': 'tco_yr2',
+    'TCO Yr3': 'tco_yr3',
+    'TCO Yr4': 'tco_yr4',
+    'TCO Yr5': 'tco_yr5',
+    'Tailpipe Emissions Yr1': 'tailpipe_emissions_yr1',
+    'Tailpipe Emissions Yr2': 'tailpipe_emissions_yr2',
+    'Tailpipe Emissions Yr3': 'tailpipe_emissions_yr3',
+    'Tailpipe Emissions Yr4': 'tailpipe_emissions_yr4',
+    'Tailpipe Emissions Yr5': 'tailpipe_emissions_yr5',
+    'Seating Capacity': 'seating_capacity',
+    'Ground Clearance(mm)': 'ground_clearance_mm',
+    'Ground Clearance': 'ground_clearance',
+    'Tech & Special Features': 'tech_features',
+    'Cargo Capacity(L)': 'cargo_capacity_l',
+    'Cargo Capacity': 'cargo_capacity',
+    '0-60 mph(s)': 'acceleration_0_60_mph',
+    '0-60 mph': 'acceleration_0_60_mph',
+    'Top Speed (km/h)': 'top_speed_kmh',
+    'Top Speed': 'top_speed',
+    'Horsepower': 'horsepower',
+    'Apple Car Play': 'apple_car_play',
+    'Body Type': 'body_type',
+    'Drive Type': 'drive_type',
+    'Engine Type': 'engine_type',
+    'Fuel Economy (GHS/km)': 'fuel_economy_ghs_per_km',
   };
 
   return headers.map(header => {
     const field = headerToField[header];
     if (!field) return '';
-    // If preserveExistingImageUrl is true and this is the Image URL field, skip it
     if (preserveExistingImageUrl && header === 'Image URL') {
       return '';
     }
@@ -136,37 +121,34 @@ const normalizeVehicleData = (vehicle, type) => {
   
   // Parse economy numbers
   const fuelEconomyPer100km = safeParseString(vehicle['Fuel Economy (/100 km)'] || vehicle.fuel_economy_per_100km);
-
-  // Parse top speed based on vehicle type - try multiple possible field names
+  const fuelEconomyPerKm = safeParseString(vehicle['Fuel Economy (/km)'] || vehicle.fuel_economy_per_km);
+  const annualFuelEconomy = safeParseString(vehicle['Annual Fuel Economy'] || vehicle.annual_fuel_economy);
+  
+  // Parse top speed
   let topSpeedValue = '';
   if (type === 'ev') {
-    // For EV: Try all possible variations
     topSpeedValue = safeParseString(
-      vehicle['Top Speed (km/h)'] ||      // With space
-      vehicle['Top Speed(km/h)'] ||       // Without space
-      vehicle['Top Speed'] ||             // Just "Top Speed"
-      vehicle.top_speed_kmh ||            // Normalized field
+      vehicle['Top Speed (km/h)'] || 
+      vehicle['Top Speed'] || 
+      vehicle.top_speed_kmh || 
       vehicle.top_speed
     );
   } else {
-    // For ICE: The column is "Top Speed"
     topSpeedValue = safeParseString(
-      vehicle['Top Speed'] ||             // ICE uses "Top Speed"
-      vehicle['Top Speed (km/h)'] ||      
-      vehicle['Top Speed(km/h)'] ||       
-      vehicle.top_speed ||
+      vehicle['Top Speed'] || 
+      vehicle['Top Speed (km/h)'] || 
+      vehicle.top_speed || 
       vehicle.top_speed_kmh
     );
   }
-
-  // Ensure top speed is a clean number string
+  
   if (topSpeedValue) {
     const numberMatch = topSpeedValue.match(/\d+/);
     if (numberMatch) {
       topSpeedValue = numberMatch[0];
     }
   }
-
+  
   // Parse acceleration
   let accelerationValue = '';
   if (type === 'ev') {
@@ -174,6 +156,40 @@ const normalizeVehicleData = (vehicle, type) => {
   } else {
     accelerationValue = safeParseString(vehicle['0-60 mph'] || vehicle.acceleration_0_60_mph);
   }
+  
+  // Parse emissions
+  const tailpipePer100km = safeParseString(vehicle['Tailpipe emissions (/100 km)'] || vehicle.tailpipe_emissions_per_100km);
+  const tailpipePerKm = safeParseString(vehicle['Tailpipe emissions /km'] || vehicle.tailpipe_emissions_per_km);
+  const annualTailpipe = safeParseString(vehicle['Annual Tailpipe emissions '] || vehicle.annual_tailpipe_emissions);
+  
+  // Parse maintenance
+  const maintenancePer100km = safeParseString(vehicle['Average maintenance cost (/100km)'] || vehicle.avg_maintenance_cost_per_100km);
+  const maintenancePerKm = safeParseString(vehicle['Average maintenance cost (/km)'] || vehicle.avg_maintenance_cost_per_km);
+  const annualMaintenance = safeParseString(vehicle['Average annual maintenance cost'] || vehicle.annual_maintenance_cost);
+  
+  // Parse TCO
+  const tcoYr1 = safeParseString(vehicle['TCO Yr1'] || vehicle.tco_yr1);
+  const tcoYr2 = safeParseString(vehicle['TCO Yr2'] || vehicle.tco_yr2);
+  const tcoYr3 = safeParseString(vehicle['TCO Yr3'] || vehicle.tco_yr3);
+  const tcoYr4 = safeParseString(vehicle['TCO Yr4'] || vehicle.tco_yr4);
+  const tcoYr5 = safeParseString(vehicle['TCO Yr5'] || vehicle.tco_yr5);
+  
+  // Parse emissions yearly
+  const emissionsYr1 = safeParseString(vehicle['Tailpipe Emissions Yr1'] || vehicle.tailpipe_emissions_yr1);
+  const emissionsYr2 = safeParseString(vehicle['Tailpipe Emissions Yr2'] || vehicle.tailpipe_emissions_yr2);
+  const emissionsYr3 = safeParseString(vehicle['Tailpipe Emissions Yr3'] || vehicle.tailpipe_emissions_yr3);
+  const emissionsYr4 = safeParseString(vehicle['Tailpipe Emissions Yr4'] || vehicle.tailpipe_emissions_yr4);
+  const emissionsYr5 = safeParseString(vehicle['Tailpipe Emissions Yr5'] || vehicle.tailpipe_emissions_yr5);
+  
+  // Parse other fields
+  const groundClearance = safeParseString(vehicle['Ground Clearance'] || vehicle.ground_clearance);
+  const cargoCapacity = safeParseString(vehicle['Cargo Capacity'] || vehicle.cargo_capacity);
+  const techFeatures = safeParseString(vehicle['Tech & Special Features'] || vehicle.tech_features);
+  const appleCarPlay = safeParseString(vehicle['Apple Car Play'] || vehicle.apple_car_play);
+  const bodyType = safeParseString(vehicle['Body Type'] || vehicle.body_type);
+  const driveType = safeParseString(vehicle['Drive Type'] || vehicle.drive_type);
+  const engineType = safeParseString(vehicle['Engine Type'] || vehicle.engine_type);
+  const fuelEconomyGhsPerKm = safeParseString(vehicle['Fuel Economy (GHS/km)'] || vehicle.fuel_economy_ghs_per_km);
   
   return {
     // Core fields
@@ -198,51 +214,66 @@ const normalizeVehicleData = (vehicle, type) => {
     
     // Economy fields
     fuel_economy_per_100km: fuelEconomyPer100km,
-    fuel_economy_per_km: safeParseString(vehicle['Fuel Economy (/km)'] || vehicle.fuel_economy_per_km),
-    annual_fuel_economy: safeParseString(vehicle['Annual Fuel Economy'] || vehicle['Fuel Economy (annual)'] || vehicle.annual_fuel_economy),
+    fuel_economy_per_km: fuelEconomyPerKm,
+    annual_fuel_economy: annualFuelEconomy,
     
     // Emissions fields
-    tailpipe_emissions_per_100km: safeParseString(vehicle['Tailpipe emissions (/100 km)'] || vehicle['Tailpipe emissions /100 km'] || vehicle.tailpipe_emissions_per_100km),
-    tailpipe_emissions_per_km: safeParseString(vehicle['Tailpipe emissions /km'] || vehicle.tailpipe_emissions_per_km),
-    annual_tailpipe_emissions: safeParseString(vehicle['Annual Tailpipe emissions '] || vehicle.annual_tailpipe_emissions),
+    tailpipe_emissions_per_100km: tailpipePer100km,
+    tailpipe_emissions_per_km: tailpipePerKm,
+    annual_tailpipe_emissions: annualTailpipe,
     
     // Maintenance fields
-    avg_maintenance_cost_per_100km: safeParseString(vehicle['Average maintenance cost (/100km)'] || vehicle.avg_maintenance_cost_per_100km),
-    avg_maintenance_cost_per_km: safeParseString(vehicle['Average maintenance cost (/km)'] || vehicle.avg_maintenance_cost_per_km),
-    annual_maintenance_cost: safeParseString(vehicle['Average annual maintenance cost'] || vehicle.annual_maintenance_cost),
+    avg_maintenance_cost_per_100km: maintenancePer100km,
+    avg_maintenance_cost_per_km: maintenancePerKm,
+    annual_maintenance_cost: annualMaintenance,
     
     // TCO fields
-    tco_yr1: safeParseString(vehicle['TCO Yr1'] || vehicle.tco_yr1),
-    tco_yr2: safeParseString(vehicle['TCO Yr2'] || vehicle.tco_yr2),
-    tco_yr3: safeParseString(vehicle['TCO Yr3'] || vehicle.tco_yr3),
-    tco_yr4: safeParseString(vehicle['TCO Yr4'] || vehicle.tco_yr4),
-    tco_yr5: safeParseString(vehicle['TCO Yr5'] || vehicle.tco_yr5),
+    tco_yr1: tcoYr1,
+    tco_yr2: tcoYr2,
+    tco_yr3: tcoYr3,
+    tco_yr4: tcoYr4,
+    tco_yr5: tcoYr5,
+    
+    // TCO object
+    tco: {
+      year1: tcoYr1,
+      year2: tcoYr2,
+      year3: tcoYr3,
+      year4: tcoYr4,
+      year5: tcoYr5
+    },
     
     // Emissions yearly
-    tailpipe_emissions_yr1: safeParseString(vehicle['Tailpipe Emissions Yr1'] || vehicle.tailpipe_emissions_yr1),
-    tailpipe_emissions_yr2: safeParseString(vehicle['Tailpipe Emissions Yr2'] || vehicle.tailpipe_emissions_yr2),
-    tailpipe_emissions_yr3: safeParseString(vehicle['Tailpipe Emissions Yr3'] || vehicle.tailpipe_emissions_yr3),
-    tailpipe_emissions_yr4: safeParseString(vehicle['Tailpipe Emissions Yr4'] || vehicle.tailpipe_emissions_yr4),
-    tailpipe_emissions_yr5: safeParseString(vehicle['Tailpipe Emissions Yr5'] || vehicle.tailpipe_emissions_yr5),
+    tailpipe_emissions_yr1: emissionsYr1,
+    tailpipe_emissions_yr2: emissionsYr2,
+    tailpipe_emissions_yr3: emissionsYr3,
+    tailpipe_emissions_yr4: emissionsYr4,
+    tailpipe_emissions_yr5: emissionsYr5,
+    
+    // Emissions object
+    emissions: {
+      year1: emissionsYr1,
+      year2: emissionsYr2,
+      year3: emissionsYr3,
+      year4: emissionsYr4,
+      year5: emissionsYr5
+    },
     
     // Other fields
     seating_capacity: seatingCapacity,
-    ground_clearance_mm: safeParseString(vehicle['Ground Clearance(mm)'] || vehicle.ground_clearance_mm),
-    cargo_capacity_l: safeParseString(vehicle['Cargo Capacity(L)'] || vehicle.cargo_capacity_l),
-    tech_features: safeParseString(vehicle['Tech & Special Features'] || vehicle.tech_features),
+    ground_clearance_mm: groundClearance,
+    ground_clearance: groundClearance,
+    cargo_capacity_l: cargoCapacity,
+    cargo_capacity: cargoCapacity,
+    tech_features: techFeatures,
+    apple_car_play: appleCarPlay,
+    body_type: bodyType,
+    drive_type: driveType,
+    engine_type: engineType,
+    fuel_economy_ghs_per_km: fuelEconomyGhsPerKm,
     
-    // image_url comes from the 'Image URL' last column
+    // image_url comes from the 'Image URL' column
     image_url: safeParseString(vehicle['Image URL'] || vehicle.image_url),
-    
-    // ICE specific fields
-    fuel_economy_ghs_per_km: safeParseString(vehicle['Fuel Economy (GHS/km)'] || vehicle.fuel_economy_ghs_per_km),
-    ground_clearance: safeParseString(vehicle['Ground Clearance'] || vehicle.ground_clearance),
-    apple_car_play: safeParseString(vehicle['Apple Car Play'] || vehicle.apple_car_play),
-    body_type: safeParseString(vehicle['Body Type'] || vehicle.body_type),
-    drive_type: safeParseString(vehicle['Drive Type'] || vehicle.drive_type),
-    cargo_capacity: safeParseString(vehicle['Cargo Capacity'] || vehicle.cargo_capacity),
-    engine_type: safeParseString(vehicle['Engine Type'] || vehicle.engine_type),
-    android_auto: safeParseString(vehicle['Android Auto'] || vehicle.android_auto),
     
     // Original data (for debugging)
     _original: vehicle
@@ -373,7 +404,6 @@ export const googleSheetsService = {
   },
 
   async updateEVVehicle(rowId, vehicleData) {
-    // For regular updates, preserve the existing image URL
     const row = vehicleToRow(EV_HEADERS, vehicleData, true);
     return await gSheets.update(`EV!A${rowId}`, row);
   },
@@ -465,14 +495,18 @@ export const googleSheetsService = {
   },
 
   async updateICEVehicle(rowId, vehicleData) {
-    // For regular updates, preserve the existing image URL
     const row = vehicleToRow(ICE_HEADERS, vehicleData, true);
     return await gSheets.update(`ICE!A${rowId}`, row);
   },
 
   async updateICEImageUrl(rowId, imageUrl) {
     const colIndex = ICE_HEADERS.indexOf('Image URL');
+    if (colIndex === -1) {
+      console.error('Image URL column not found in ICE_HEADERS');
+      throw new Error('Image URL column not configured');
+    }
     const colLetter = columnIndexToLetter(colIndex);
+    console.log(`Updating ICE image URL: ${colLetter}${rowId} with URL: ${imageUrl}`);
     return await gSheets.update(`ICE!${colLetter}${rowId}`, [imageUrl]);
   },
 
@@ -508,7 +542,7 @@ export const googleSheetsService = {
 
       const engineTypes = {};
       ices.forEach(r => {
-        const engine = r[34] || 'Unknown';
+        const engine = r[37] || 'Unknown';
         engineTypes[engine] = (engineTypes[engine] || 0) + 1;
       });
 
@@ -539,7 +573,7 @@ export const googleSheetsService = {
         : 0;
 
       const evHP = evs.map(r => parseFloat(r[32])).filter(h => !isNaN(h) && h > 0);
-      const iceHP = ices.map(r => parseFloat(r[37])).filter(h => !isNaN(h) && h > 0);
+      const iceHP = ices.map(r => parseFloat(r[32])).filter(h => !isNaN(h) && h > 0);
       
       const avgEVHP = evHP.length > 0 
         ? Math.round(evHP.reduce((a, b) => a + b, 0) / evHP.length)
